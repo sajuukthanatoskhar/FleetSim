@@ -1,4 +1,7 @@
-import Main_Menu
+
+
+
+
 
 try:
     import Tkinter as tk
@@ -11,9 +14,13 @@ try:
 except ImportError:
     import tkinter.ttk as ttk
     py3 = True
+import MainMenu as MM
+import ship
+import ShipCreator
 
 if __name__ == 'main':
-    Main_Menu()
+    pass
+
 
 
 
