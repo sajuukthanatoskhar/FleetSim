@@ -1,4 +1,5 @@
-from ShipCreator import *
+import Main_Menu
+
 try:
     import Tkinter as tk
 except ImportError:
@@ -12,7 +13,7 @@ except ImportError:
     py3 = True
 
 if __name__ == 'main':
-    pass
+    Main_Menu()
 
 
 
