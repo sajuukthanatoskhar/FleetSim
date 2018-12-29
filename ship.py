@@ -14,6 +14,8 @@ class fleet():
         self.ships = []
         self.is_anchor = False
         self.currentanchor = None
+        self.currenttargetstatus = -1  #-1 Not set, 0 is dead, 1 is alive
+        self.currentprimary = None
 
     def add_ship_to_fleet(self,ship):
         self.ships.append(ship)
@@ -42,7 +44,7 @@ class fleet():
 
     def anchorup(self,distance):
         not_everyone_anchored = False
-        for i in range(0, len(FleetRed.ships)):
+        for i in range(0, len(self.ships)):
             if self.ships[i].is_anchor == True:
                 continue
             if self.ships[i].calc_distance(self.currentanchor) > distance:
@@ -54,12 +56,39 @@ class fleet():
             return 1  #If everyone is anchored and in range - we get a return 1 and PGL is happy
 
 
+    def chooseprimary(self,fleet,method):
+        distances = []
+        for ship in range(0,len(fleet.ships)):
+            distances.append(self.currentanchor.calc_distance(fleet.ships[ship]))
+        return fleet.ships[np.argmin(distances)]
 
-
+    def fleet_attack_procedure(self,target): #based off the ship class
+        if debug == 1:
+            print("Debug - main_attack_procedure\nRange of " + self.name + " to " + target.name + " :" + str(self.check_range(target)))
+        if self.check_range(target) > self.range:
+            self.currentanchor.move_ship_to(target)
+        else:
+            self.attack(target)
 
     def attack_other_fleet(self,fleet,method):
         if method == "Basic Anchor and attack":
-            pass
+
+            if(self.currenttargetstatus != 1): #If our ship is not alive
+                self.currentprimary = self.chooseprimary(fleet,"closest")
+
+
+
+
+            if self.currentprimary.hp >0:
+                self.currenttargetstatus = 1
+                #attack if in range
+                for i in range(0,len(self.ships)):
+                    self.ships[i].main_attack_procedure(self.currentprimary,self)
+
+            elif self.currentprimary.hp <= 0:
+                self.currenttargetstatus = 0
+
+
         if method == "Evasive":
             pass
         if method == "Break Anchor":
@@ -77,7 +106,22 @@ class fleet():
         #for enemy in fleet.ships:
 
         #for s in self.ships:
+    def choosenewanchor(self):
+        hp = []
+        for i in range(0,len(self.ships)):
+            hp.append(self.ships[i].hp)
+        self.set_anchor(self.ships[np.argmax(hp)])
+        #return fleet.ships[np.argmin(distances)]
 
+
+    def checkenemyfleetdead(self,fleet):
+        for i in range(0, len(fleet.ships)):
+            if fleet.ships[i].hp <= 0:
+                if fleet.currentanchor == fleet.ships[i]:
+                    fleet.choosenewanchor()
+                del fleet.ships[i]
+                return 1
+        return 0
 
 
     def printstats(self):
@@ -164,11 +208,12 @@ class ship:
 
 
 
-    def main_attack_procedure(self,target):
+    def main_attack_procedure(self,target,fleet):
         if debug == 1:
             print("Debug - main_attack_procedure\nRange of " + self.name + " to " + target.name + " :" + str(self.check_range(target)))
         if self.check_range(target) > self.range:
-            self.move_ship_to(target)
+            fleet.currentanchor.move_ship_to(target)
+            pass
         else:
             self.attack(target)
 
@@ -218,21 +263,35 @@ FleetBlue = fleet("Blue")
 #FleetRed.add_ship_to_fleet(ship1)
 #FleetBlue.add_ship_to_fleet(ship2)
 for i in range(0,10,1):
-    FleetRed.ships.append(ship(40,10,10,5,1,"Thanatos "+str(i),random.randint(30,150),100,20,FleetRed))
-    FleetBlue.ships.append(ship(50,9,50,2,1,"BoopityBoppity " +str(i),50,150,20,FleetBlue))
+    FleetRed.ships.append(ship(80,2,10,5,1,"Thanatos "+str(i),random.randint(30,150),100,20,FleetRed))
+    FleetBlue.ships.append(ship(50,2,15,2,1,"BoopityBoppity " +str(i),50,150,20,FleetBlue))
 #while ship2.hp > 0 and ship1.hp > 0:
 
     #ship1.main_attack_procedure(ship2)
     #ship2.evasive_attack_procedure(ship1,30)
 FleetRed.ships.append(ship(40,10,10,5,1,"Shitty Pilot #1",100,100,20,FleetRed))
-FleetRed.set_anchor(FleetRed.ships[0])
-while(True):
-    if FleetRed.anchorup(10) == 1:
-        break
-    else:
-        printstatsheader()
-        FleetRed.printstats()
-        #FleetBlue.printstats()
+FleetRed.choosenewanchor()
+FleetBlue.choosenewanchor()
+while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
+    FleetRed.anchorup(10)
+    FleetBlue.anchorup(10)
+    #Attack
+    FleetRed.attack_other_fleet(FleetBlue,"Basic Anchor and attack")
+    FleetBlue.attack_other_fleet(FleetRed, "Basic Anchor and attack")
+
+    processing_dead = 1
+    while (processing_dead):
+        processing_dead = FleetRed.checkenemyfleetdead(FleetBlue)
+
+    processing_dead = 1
+    while (processing_dead):
+        processing_dead = FleetBlue.checkenemyfleetdead(FleetRed)
+
+
+    printstatsheader()
+    FleetRed.printstats()
+    FleetBlue.printstats()
+
 
 
 #anchor.findclosesthostileshipinfleet(FleetBlue)
