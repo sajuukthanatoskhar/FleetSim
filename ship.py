@@ -251,66 +251,68 @@ def printstats(ship):
     # print("%s" % ship.name)
     #print(str(ship.name) + "\t\t\t" + str(ship.hp) + "\t" + str(ship.loc.x) +"\t" + str(ship.loc.y) +"\t" + str(ship.loc.z) )
 
-FleetRed = fleet("Red")
-FleetBlue = fleet("Blue")
+
+if __name__=="__main__":
+    FleetRed = fleet("Red")
+    FleetBlue = fleet("Blue")
 
 
 
 
-#ship1 = ship(40,10,10,5,1,"Thanatos",50,100,20,FleetRed)
-#ship2 = ship(50,9,50,2,1,"BoopityBoppity",50,150,20,FleetBlue)
+    #ship1 = ship(40,10,10,5,1,"Thanatos",50,100,20,FleetRed)
+    #ship2 = ship(50,9,50,2,1,"BoopityBoppity",50,150,20,FleetBlue)
 
-#FleetRed.add_ship_to_fleet(ship1)
-#FleetBlue.add_ship_to_fleet(ship2)
-for i in range(0,10,1):
-    FleetRed.ships.append(ship(80,2,10,5,1,"Thanatos "+str(i),random.randint(30,150),100,20,FleetRed))
-    FleetBlue.ships.append(ship(50,2,15,2,1,"BoopityBoppity " +str(i),50,150,20,FleetBlue))
-#while ship2.hp > 0 and ship1.hp > 0:
+    #FleetRed.add_ship_to_fleet(ship1)
+    #FleetBlue.add_ship_to_fleet(ship2)
+    for i in range(0,100,1):
+        FleetRed.ships.append(ship(80,2,10,5,1,"Thanatos "+str(i),random.randint(30,150),100,20,FleetRed))
+        FleetBlue.ships.append(ship(50,2,15,2,1,"BoopityBoppity " +str(i),50,150,20,FleetBlue))
+    #while ship2.hp > 0 and ship1.hp > 0:
 
-    #ship1.main_attack_procedure(ship2)
-    #ship2.evasive_attack_procedure(ship1,30)
-FleetRed.ships.append(ship(40,10,10,5,1,"Shitty Pilot #1",100,100,20,FleetRed))
-FleetRed.choosenewanchor()
-FleetBlue.choosenewanchor()
-while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
-    FleetRed.anchorup(10)
-    FleetBlue.anchorup(10)
-    #Attack
-    FleetRed.attack_other_fleet(FleetBlue,"Basic Anchor and attack")
-    FleetBlue.attack_other_fleet(FleetRed, "Basic Anchor and attack")
+        #ship1.main_attack_procedure(ship2)
+        #ship2.evasive_attack_procedure(ship1,30)
+    FleetRed.ships.append(ship(40,10,10,5,1,"Shitty Pilot #1",100,100,20,FleetRed))
+    FleetRed.choosenewanchor()
+    FleetBlue.choosenewanchor()
+    while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
+        FleetRed.anchorup(10)
+        FleetBlue.anchorup(10)
+        #Attack
+        FleetRed.attack_other_fleet(FleetBlue,"Basic Anchor and attack")
+        FleetBlue.attack_other_fleet(FleetRed, "Basic Anchor and attack")
 
-    processing_dead = 1
-    while (processing_dead):
-        processing_dead = FleetRed.checkenemyfleetdead(FleetBlue)
+        processing_dead = 1
+        while (processing_dead):
+            processing_dead = FleetRed.checkenemyfleetdead(FleetBlue)
 
-    processing_dead = 1
-    while (processing_dead):
-        processing_dead = FleetBlue.checkenemyfleetdead(FleetRed)
-
-
-    printstatsheader()
-    FleetRed.printstats()
-    FleetBlue.printstats()
+        processing_dead = 1
+        while (processing_dead):
+            processing_dead = FleetBlue.checkenemyfleetdead(FleetRed)
 
 
-
-#anchor.findclosesthostileshipinfleet(FleetBlue)
+        printstatsheader()
+        FleetRed.printstats()
+        FleetBlue.printstats()
 
 
 
-
-#del FleetRed.ships[1]
-
-#print(FleetRed.ships[1].name)
+    #anchor.findclosesthostileshipinfleet(FleetBlue)
 
 
 
 
-    #printstats(ship1)
-    #printstats(ship2)
-print("---------------------------------------------------------")
-    # print("Ship 1" + str(ship1.name) + " " + str(ship1.hp))
-    # print("Ship 2" + str(ship2.name) + " " + str(ship2.hp))
+    #del FleetRed.ships[1]
+
+    #print(FleetRed.ships[1].name)
+
+
+
+
+        #printstats(ship1)
+        #printstats(ship2)
+    print("---------------------------------------------------------")
+        # print("Ship 1" + str(ship1.name) + " " + str(ship1.hp))
+        # print("Ship 2" + str(ship2.name) + " " + str(ship2.hp))
 
 
 
