@@ -3,11 +3,11 @@ import numpy as np
 import weakref
 import random
 import os
+import weaponsystems
 debug = 0
 
 class fleet():
     fleets = []
-
     def __init__(self,name):
         self.__class__.fleets.append(weakref.proxy(self)) #all fleets are tracked because why not
         self.name = name
@@ -137,7 +137,7 @@ class location:
 
 class ship:
     instances = []
-    def __init__(self, hitpoints,damage,range,speed,inertia,name,x,y,z,fleet):
+    def __init__(self, hitpoints,damage,range,speed,inertia,name,x,y,z,fleet,weapons):
         self.hp = hitpoints
         self.dps = damage
         self.range = range
@@ -145,7 +145,8 @@ class ship:
         self.inertia = inertia
         self.name = name
         self.loc = location(x,y,z)
-
+        self.weapon = weapons
+        self.signature = 50
         if fleet != None:
             self.fleet = fleet
 
@@ -170,7 +171,8 @@ class ship:
 
     def attack(self,target):
         if self.check_range(target) <= self.range:
-            target.hp -= self.dps
+            lower,upper,avg = self.calc_weapon_avg_dps_mod(target)
+            target.hp -= self.dps*avg #todo: the dps should not sit at this average - it needs to modified based on the number received from the tohit
         if target.hp <=0:
             print("*************%s destroyed **********************" % target.name)
 
@@ -190,10 +192,25 @@ class ship:
         z = self.loc.z - target.loc.z
 
         return np.sqrt(x**2+y**2+z**2)
+
+    #todo: This function
+    def calculate_angular(self,target):
+        return 1
+
+    def calc_weapon_avg_dps_mod(self,target):
+        mod =  1 - self.calc_weapon_to_hit_chance(target)
+        lower = 0.5
+        upper = 1.49-mod
+        avgdps = (self.calc_weapon_to_hit_chance(target)-0.01)*((lower+upper)/2)+0.03
+        return lower,upper,avgdps
+
+
+    def calc_weapon_to_hit_chance(self,target):
+        chance = 0.5**(self.calculate_angular(target)*40000/(self.weapon.tracking*target.signature)**2 + (max(0,(self.calc_distance(target)-self.weapon.optimal))/self.weapon.falloff)**2)
+        #chance = 0.5
+        return chance
     def move_ship_to(self,target):
-
         x,y,z = self.calculate_location_3d_diff(target)
-
         mag = np.array([x,y,z])
         mag = np.linalg.norm(mag)
         if mag != 0:
@@ -264,7 +281,7 @@ if __name__=="__main__":
 
     #FleetRed.add_ship_to_fleet(ship1)
     #FleetBlue.add_ship_to_fleet(ship2)
-    for i in range(0,100,1):
+    for i in range(0,10,1):
         FleetRed.ships.append(ship(80,2,10,5,1,"Thanatos "+str(i),random.randint(30,150),100,20,FleetRed))
         FleetBlue.ships.append(ship(50,2,15,2,1,"BoopityBoppity " +str(i),50,150,20,FleetBlue))
     #while ship2.hp > 0 and ship1.hp > 0:
