@@ -6,8 +6,10 @@ class turret():
         self.falloff = falloff
         self.dps = dps
         self.name = name
-        self.tracking = wsa #todo: modify and convert this to rad/s
+        self.tracking = self.convert_wsa_rads(wsa)
 
+    def convert_wsa_rads(self,wsa):
+        return wsa #todo convert wsa to rads, but I am on a plane and can't check the formula RIP
 
     def fire_weapon(self):
         return self.dps

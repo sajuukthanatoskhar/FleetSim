@@ -4,6 +4,7 @@ import weakref
 import random
 import os
 import weaponsystems
+import math
 debug = 0
 
 class fleet():
@@ -134,9 +135,24 @@ class location:
         self.x = x
         self.y = y
         self.z = z
+        self.xold = None
+        self.yold = None
+        self.zold = None
+
+    def find_distance_for_translation(self):
+        if self.xold == None or self.yold == None or self.zold == None:
+            return 0
+        else:
+            return math.sqrt((self.x-self.xold)**2 + (self.y-self.yold)**2 + (self.z-self.zold)**2)
+
+    def translate_location(self):
+        self.xold = self.x
+        self.yold = self.y
+        self.zold = self.z
 
 class ship:
     instances = []
+
     def __init__(self, hitpoints,damage,range,speed,inertia,name,x,y,z,fleet,weapons):
         self.hp = hitpoints
         self.dps = damage
@@ -170,14 +186,15 @@ class ship:
         return np.linalg.norm(mag)
 
     def attack(self,target):
-        if self.check_range(target) <= self.range:
+        success_value,test_value = self.calc_weapon_to_hit_chance(target)
+        if test_value < success_value:
+            #Weapon miss
+            return 0
+        if self.check_range(target) <= self.range: #todo: the self.range should be interpreted as a targetting range
             lower,upper,avg = self.calc_weapon_avg_dps_mod(target)
-            target.hp -= self.dps*avg #todo: the dps should not sit at this average - it needs to modified based on the number received from the tohit
+            target.hp -= self.weapon.dps*avg #todo: the dps should not sit at this average - it needs to modified based on the number received from the tohit
         if target.hp <=0:
             print("*************%s destroyed **********************" % target.name)
-
-    def update_health(self):
-        pass
 
 
     def calculate_location_3d_diff(self,target):
@@ -193,9 +210,38 @@ class ship:
 
         return np.sqrt(x**2+y**2+z**2)
 
-    #todo: This function
+    #todo: This function needs to check things.
+    #todo: Remember the radial velocity function.  d
     def calculate_angular(self,target):
+        if (target.loc.xold == None and target.loc.yold == None and target.loc.zold == None):
+            return 1
+        else:
+            target.loc.x - target
+
+            #calculate distance to old position -> c
+            c = self.calc_dist_using_xyz(target.loc.x,target.loc.y,target.loc.z)
+            #calculate distance to new position -> b
+            b = self.calc_dist_using_xyz(target.loc.xold, target.loc.yold, target.loc.zold)
+            #find distance between old and new positions -> a
+            a = target.loc.find_distance_for_translation()
+            #Use cosine rule to find solution to angle A
+            #todo: a**2 = b**2 + c**2 -2bc
+            return math.acos((a**2-b**2-c**2)/(-2*b*c))
+            #math.asin will put it in terms of rads  #todo: warning, please check if the concept is sound
+            #todo:write test case for this function please using standard triangle
+            #note: cosine rule is compatible with right angle triangles
+
         return 1
+    def calc_dist_using_xyz(self,x,y,z):
+        x = self.loc.x - x
+        y = self.loc.y - y
+        z = self.loc.z - z
+
+
+        return math.sqrt(x**2+y**2+z**2)
+
+
+
 
     def calc_weapon_avg_dps_mod(self,target):
         mod =  1 - self.calc_weapon_to_hit_chance(target)
@@ -204,11 +250,14 @@ class ship:
         avgdps = (self.calc_weapon_to_hit_chance(target)-0.01)*((lower+upper)/2)+0.03
         return lower,upper,avgdps
 
+    def calc_tracking_score(self):
+        return self.weapon.tracking
 
     def calc_weapon_to_hit_chance(self,target):
-        chance = 0.5**(self.calculate_angular(target)*40000/(self.weapon.tracking*target.signature)**2 + (max(0,(self.calc_distance(target)-self.weapon.optimal))/self.weapon.falloff)**2)
+        chance = 0.5**((self.calculate_angular(target)*40000/(self.calc_tracking_score()*target.signature)**2 + (max(0,(self.calc_distance(target)-self.weapon.optimal))/self.weapon.falloff)**2))
         #chance = 0.5
-        return chance
+        testedvalue= random.random()
+        return chance,testedvalue
     def move_ship_to(self,target):
         x,y,z = self.calculate_location_3d_diff(target)
         mag = np.array([x,y,z])
@@ -217,6 +266,7 @@ class ship:
             x *= self.speed/mag
             y *= self.speed/mag
             z *= self.speed/mag
+            self.loc.translate_location()
             self.loc.x -= x
             self.loc.y -= y
             self.loc.z -= z
@@ -270,6 +320,7 @@ def printstats(ship):
 
 
 if __name__=="__main__":
+    small_autocannon = weaponsystems.turret(50, 50, 50, "Small Autocannon", 8)
     FleetRed = fleet("Red")
     FleetBlue = fleet("Blue")
 
@@ -282,13 +333,13 @@ if __name__=="__main__":
     #FleetRed.add_ship_to_fleet(ship1)
     #FleetBlue.add_ship_to_fleet(ship2)
     for i in range(0,10,1):
-        FleetRed.ships.append(ship(80,2,10,5,1,"Thanatos "+str(i),random.randint(30,150),100,20,FleetRed))
-        FleetBlue.ships.append(ship(50,2,15,2,1,"BoopityBoppity " +str(i),50,150,20,FleetBlue))
+        FleetRed.ships.append(ship(80,2,10,5,1,"Thanatos "+str(i),random.randint(30,150),100,20,FleetRed,small_autocannon))
+        FleetBlue.ships.append(ship(50,2,15,2,1,"BoopityBoppity " +str(i),50,150,20,FleetBlue,small_autocannon))
     #while ship2.hp > 0 and ship1.hp > 0:
 
         #ship1.main_attack_procedure(ship2)
         #ship2.evasive_attack_procedure(ship1,30)
-    FleetRed.ships.append(ship(40,10,10,5,1,"Shitty Pilot #1",100,100,20,FleetRed))
+    FleetRed.ships.append(ship(40,10,10,5,1,"Shitty Pilot #1",100,100,20,FleetRed,small_autocannon))
     FleetRed.choosenewanchor()
     FleetBlue.choosenewanchor()
     while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
