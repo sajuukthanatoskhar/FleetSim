@@ -9,7 +9,7 @@ debug = 0
 
 class fleet():
     fleets = []
-    def __init__(self,name):
+    def __init__(self,name,engagementdistance):
         self.__class__.fleets.append(weakref.proxy(self)) #all fleets are tracked because why not
         self.name = name
         self.ships = []
@@ -17,6 +17,8 @@ class fleet():
         self.currentanchor = None
         self.currenttargetstatus = -1  #-1 Not set, 0 is dead, 1 is alive
         self.currentprimary = None
+
+        self.engagementrange = engagementdistance
 
     def add_ship_to_fleet(self,ship):
         self.ships.append(ship)
@@ -42,11 +44,15 @@ class fleet():
             self.ships[i].is_anchor = False
         ship.is_anchor = True
         self.currentanchor = ship
+    def anchor_move_to_target(self,target):
+        pass
 
     def anchorup(self,distance):
         not_everyone_anchored = False
         for i in range(0, len(self.ships)):
             if self.ships[i].is_anchor == True:
+                if self.currentanchor.check_range(self.currentprimary) > self.engagementrange:
+                    self.currentanchor.move_ship_to(self.currentprimary)
                 continue
             if self.ships[i].calc_distance(self.currentanchor) > distance:
                 self.ships[i].move_ship_to(self.currentanchor)
@@ -62,6 +68,12 @@ class fleet():
         for ship in range(0,len(fleet.ships)):
             distances.append(self.currentanchor.calc_distance(fleet.ships[ship]))
         return fleet.ships[np.argmin(distances)]
+
+    def fleet_choose_primary_now(self,fleet,method):
+        distances = []
+        for ship in range(0, len(fleet.ships)):
+            distances.append(self.currentanchor.calc_distance(fleet.ships[ship]))
+        self.currentprimary = fleet.ships[np.argmin(distances)]
 
     def fleet_attack_procedure(self,target): #based off the ship class
         if debug == 1:
@@ -84,6 +96,7 @@ class fleet():
                 self.currenttargetstatus = 1
                 #attack if in range
                 for i in range(0,len(self.ships)):
+                    self.ships[i].current_target = self.currentprimary
                     self.ships[i].main_attack_procedure(self.currentprimary,self)
 
             elif self.currentprimary.hp <= 0:
@@ -127,7 +140,7 @@ class fleet():
 
     def printstats(self):
         for s in self.ships:
-            print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor))
+            print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
 
 
 class location:
@@ -163,6 +176,10 @@ class ship:
         self.loc = location(x,y,z)
         self.weapon = weapons
         self.signature = 50
+        self.current_target = None
+        self.damagedealt_this_tick = None
+        self.distance_from_target = None
+        self.angular_velocity = None
         if fleet != None:
             self.fleet = fleet
 
@@ -187,12 +204,16 @@ class ship:
 
     def attack(self,target):
         success_value,test_value = self.calc_weapon_to_hit_chance(target)
-        if test_value < success_value:
+
+        if test_value > success_value:
+            self.damagedealt_this_tick = 0
             #Weapon miss
             return 0
         if self.check_range(target) <= self.range: #todo: the self.range should be interpreted as a targetting range
-            lower,upper,avg = self.calc_weapon_avg_dps_mod(target)
+            lower,upper,avg = self.calc_weapon_avg_dps_mod(target,test_value)
             target.hp -= self.weapon.dps*avg #todo: the dps should not sit at this average - it needs to modified based on the number received from the tohit
+            self.damagedealt_this_tick = math.floor(self.weapon.dps*avg)
+
         if target.hp <=0:
             print("*************%s destroyed **********************" % target.name)
 
@@ -216,7 +237,7 @@ class ship:
         if (target.loc.xold == None and target.loc.yold == None and target.loc.zold == None):
             return 1
         else:
-            target.loc.x - target
+#            target.loc.x - target
 
             #calculate distance to old position -> c
             c = self.calc_dist_using_xyz(target.loc.x,target.loc.y,target.loc.z)
@@ -226,7 +247,15 @@ class ship:
             a = target.loc.find_distance_for_translation()
             #Use cosine rule to find solution to angle A
             #todo: a**2 = b**2 + c**2 -2bc
-            return math.acos((a**2-b**2-c**2)/(-2*b*c))
+
+            sum = (a**2-b**2-c**2)/(-2*b*c)
+
+            if sum > 1 and sum < 1.1:
+                sum = 1
+            if sum < -1 and sum > -1.1:
+                sum = -1
+            self.angular_velocity = math.acos(sum)
+            return math.acos(sum)
             #math.asin will put it in terms of rads  #todo: warning, please check if the concept is sound
             #todo:write test case for this function please using standard triangle
             #note: cosine rule is compatible with right angle triangles
@@ -243,11 +272,13 @@ class ship:
 
 
 
-    def calc_weapon_avg_dps_mod(self,target):
-        mod =  1 - self.calc_weapon_to_hit_chance(target)
+    def calc_weapon_avg_dps_mod(self,target,chance):
+        #chance,testedvalue = self.calc_weapon_to_hit_chance(target)
+        mod= 1 - chance
         lower = 0.5
         upper = 1.49-mod
-        avgdps = (self.calc_weapon_to_hit_chance(target)-0.01)*((lower+upper)/2)+0.03
+        #lower, upper, avgdps = self.calc_weapon_avg_dps_mod(target)
+        avgdps = (chance-0.01)*((lower+upper)/2)+0.03
         return lower,upper,avgdps
 
     def calc_tracking_score(self):
@@ -258,6 +289,7 @@ class ship:
         #chance = 0.5
         testedvalue= random.random()
         return chance,testedvalue
+
     def move_ship_to(self,target):
         x,y,z = self.calculate_location_3d_diff(target)
         mag = np.array([x,y,z])
@@ -276,15 +308,19 @@ class ship:
 
 
     def main_attack_procedure(self,target,fleet):
+        self.distance_from_target = self.check_range(target)
         if debug == 1:
             print("Debug - main_attack_procedure\nRange of " + self.name + " to " + target.name + " :" + str(self.check_range(target)))
         if self.check_range(target) > self.range:
-            fleet.currentanchor.move_ship_to(target)
+            #fleet.currentanchor.move_ship_to(target) #todo: is this ok?  Like what is going on here.  Is the anchor actually moving #[number of fleetmembers]# times
+            #No, there is no movement, this is strictly an attack protocol.  Wtf, who coded this?  Oh it was me, Sajuuk
+            self.damagedealt_this_tick = 0
             pass
         else:
             self.attack(target)
 
     def evasive_attack_procedure(self,target,evasiverange):
+        self.distance_from_target = self.check_range(target)
         if self.range < evasiverange:
             evasiverange = self.range
             print("Incorrect Range/Evasive Range")
@@ -311,18 +347,12 @@ class ship:
 
 def printstatsheader():
     #print("%30s %s\t%s\t%\t%s"%("Ship Name","Ship HP","X","Y","Z"))
-    print("\n%-30s %-10s %-10s %-5s %-5s %-5s %-10s" % ("Ship Name","Fleet","Ship HP","X","Y","Z","Is Anchor"))
-
-def printstats(ship):
-    print("%-30s %-10s %-10d %-5d %-5d %-5d"% (ship.name,ship.fleet.name,ship.hp,ship.loc.x,ship.loc.y,ship.loc.z))
-    # print("%s" % ship.name)
-    #print(str(ship.name) + "\t\t\t" + str(ship.hp) + "\t" + str(ship.loc.x) +"\t" + str(ship.loc.y) +"\t" + str(ship.loc.z) )
-
+    print("\n%-30s %-10s %-10s %-5s %-5s %-5s %-10s %-25s %-20s %-15s %-25s" % ("Ship Name","Fleet","Ship HP","X","Y","Z","Is Anchor","Target","Distance", "Damage Dealt","Angular Velocity"))
 
 if __name__=="__main__":
-    small_autocannon = weaponsystems.turret(50, 50, 50, "Small Autocannon", 8)
-    FleetRed = fleet("Red")
-    FleetBlue = fleet("Blue")
+    small_autocannon = weaponsystems.turret(100, 80, 90, "Small Autocannon", 8)
+    FleetRed = fleet("Red",40)
+    FleetBlue = fleet("Blue",50)
 
 
 
@@ -333,8 +363,8 @@ if __name__=="__main__":
     #FleetRed.add_ship_to_fleet(ship1)
     #FleetBlue.add_ship_to_fleet(ship2)
     for i in range(0,10,1):
-        FleetRed.ships.append(ship(80,2,10,5,1,"Thanatos "+str(i),random.randint(30,150),100,20,FleetRed,small_autocannon))
-        FleetBlue.ships.append(ship(50,2,15,2,1,"BoopityBoppity " +str(i),50,150,20,FleetBlue,small_autocannon))
+        FleetRed.ships.append(ship(800,2,60,5,1,"Thanatos_"+str(i),random.randint(30,150),random.randint(30,150),20,FleetRed,small_autocannon))
+        FleetBlue.ships.append(ship(500,2,70,2,1,"Nyx_" +str(i),50,150,20,FleetBlue,small_autocannon))
     #while ship2.hp > 0 and ship1.hp > 0:
 
         #ship1.main_attack_procedure(ship2)
@@ -342,9 +372,12 @@ if __name__=="__main__":
     FleetRed.ships.append(ship(40,10,10,5,1,"Shitty Pilot #1",100,100,20,FleetRed,small_autocannon))
     FleetRed.choosenewanchor()
     FleetBlue.choosenewanchor()
+    FleetRed.fleet_choose_primary_now(FleetBlue,"closest")
+    FleetBlue.fleet_choose_primary_now(FleetRed, "closest")
     while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
-        FleetRed.anchorup(10)
+        FleetRed.anchorup(5)
         FleetBlue.anchorup(10)
+
         #Attack
         FleetRed.attack_other_fleet(FleetBlue,"Basic Anchor and attack")
         FleetBlue.attack_other_fleet(FleetRed, "Basic Anchor and attack")
