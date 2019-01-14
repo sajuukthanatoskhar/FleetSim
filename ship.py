@@ -179,7 +179,7 @@ class ship:
         self.current_target = None
         self.damagedealt_this_tick = None
         self.distance_from_target = None
-        self.angular_velocity = None
+        self.angular_velocity = None #angular velocity of current target
         if fleet != None:
             self.fleet = fleet
 
