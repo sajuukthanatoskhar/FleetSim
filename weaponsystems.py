@@ -23,5 +23,5 @@ class turret():
         #   return 0
 
 
-class missile_turret(turret):
+class missile_turret():
     pass

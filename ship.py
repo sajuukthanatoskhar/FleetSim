@@ -1,11 +1,19 @@
 #! /usr/bin/env python
+import json
+import sys
+
 import numpy as np
 import weakref
 import random
 import os
+import pickle
+import proc as proc
+
 import weaponsystems
 import math
+from time import sleep
 debug = 0
+import socket
 
 class fleet():
     fleets = []
@@ -139,9 +147,12 @@ class fleet():
 
 
     def printstats(self):
+        listy = []
+
         for s in self.ships:
             print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
-
+            listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)))
+        return listy
 
 class location:
     def __init__(self,x,y,z):
@@ -348,12 +359,17 @@ class ship:
 def printstatsheader():
     #print("%30s %s\t%s\t%\t%s"%("Ship Name","Ship HP","X","Y","Z"))
     print("\n%-30s %-10s %-10s %-5s %-5s %-5s %-10s %-25s %-20s %-15s %-25s" % ("Ship Name","Fleet","Ship HP","X","Y","Z","Is Anchor","Target","Distance", "Damage Dealt","Angular Velocity"))
-
+    return ("\n%-30s %-10s %-10s %-5s %-5s %-5s %-10s %-25s %-20s %-15s %-25s" % ("Ship Name","Fleet","Ship HP","X","Y","Z","Is Anchor","Target","Distance", "Damage Dealt","Angular Velocity"))
 if __name__=="__main__":
+    UDP_port_no = 6789
+    Sender_Port_No = 6790
+    UDP_IP_Address = "127.0.0.1"
     small_autocannon = weaponsystems.turret(100, 80, 90, "Small Autocannon", 8)
     FleetRed = fleet("Red",40)
     FleetBlue = fleet("Blue",50)
-
+    serversock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    serversock.bind((UDP_IP_Address, UDP_port_no))
+    listenersock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 
 
@@ -391,9 +407,16 @@ if __name__=="__main__":
             processing_dead = FleetBlue.checkenemyfleetdead(FleetRed)
 
 
-        printstatsheader()
-        FleetRed.printstats()
+        line = printstatsheader()
+        listenersock.sendto(line.encode('UTF-8'), (UDP_IP_Address, Sender_Port_No))
+        #listenersock.sendto(FleetRed.printstats(),(UDP_IP_Address,Sender_Port_No))
+        listy = FleetRed.printstats()
+        for i in range(0,len(listy)):
+            listenersock.sendto(listy[i].encode('UTF-8'),(UDP_IP_Address,Sender_Port_No))
+
         FleetBlue.printstats()
+        sleep(1)
+        #sys.stdout.flush()
 
 
 
