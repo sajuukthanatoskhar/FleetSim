@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import json
 import sys
+import UDP_Server_Client.Server_Client
 
 import numpy as np
 import weakref
@@ -415,8 +416,28 @@ if __name__=="__main__":
             listenersock.sendto(listy[i].encode('UTF-8'),(UDP_IP_Address,Sender_Port_No))
 
         FleetBlue.printstats()
-        sleep(1)
-        #sys.stdout.flush()
+
+        print("End of round")
+
+        state = 2
+        while(state == 2):
+            if(UDP_Server_Client.Server_Client.send_packet(listenersock,state,UDP_IP_Address,Sender_Port_No)==-1):
+                print("Error")
+            else:
+                state = 3
+
+        while(state == 3):
+            print("Waiting for '4'")
+            state = str(UDP_Server_Client.Server_Client.receive_packet(serversock))
+
+            if(state != 3):
+                print(state)
+            if state == '4':
+                print("Moving on")
+                break
+
+
+
 
 
 
