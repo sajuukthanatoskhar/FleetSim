@@ -2,7 +2,7 @@
 import json
 import sys
 import UDP_Server_Client.Server_Client
-
+from fleet import *
 import numpy as np
 import weakref
 import random
@@ -16,144 +16,7 @@ from time import sleep
 debug = 0
 import socket
 
-class fleet():
-    fleets = []
-    def __init__(self,name,engagementdistance):
-        self.__class__.fleets.append(weakref.proxy(self)) #all fleets are tracked because why not
-        self.name = name
-        self.ships = []
-        self.is_anchor = False
-        self.currentanchor = None
-        self.currenttargetstatus = -1  #-1 Not set, 0 is dead, 1 is alive
-        self.currentprimary = None
 
-        self.engagementrange = engagementdistance
-
-    def add_ship_to_fleet(self,ship):
-        self.ships.append(ship)
-
-    def remove_ship(self,ship,reason):
-        for i in self.ships:
-            if i.name == ship.name:
-                del i
-
-
-    def range_from_anchor(self,ship):
-        ship.calc_distance(self.currentanchor)
-
-
-    def default_fleet_activity(self):
-        #attack other fleet
-        #for f in
-        pass
-
-
-    def set_anchor(self,ship):
-        for i in range(0,len(self.ships)):
-            self.ships[i].is_anchor = False
-        ship.is_anchor = True
-        self.currentanchor = ship
-    def anchor_move_to_target(self,target):
-        pass
-
-    def anchorup(self,distance):
-        not_everyone_anchored = False
-        for i in range(0, len(self.ships)):
-            if self.ships[i].is_anchor == True:
-                if self.currentanchor.check_range(self.currentprimary) > self.engagementrange:
-                    self.currentanchor.move_ship_to(self.currentprimary)
-                continue
-            if self.ships[i].calc_distance(self.currentanchor) > distance:
-                self.ships[i].move_ship_to(self.currentanchor)
-                not_everyone_anchored = True
-        if not_everyone_anchored == True:
-            return 0  #GODDAMN TRYRM GUYS
-        else:
-            return 1  #If everyone is anchored and in range - we get a return 1 and PGL is happy
-
-
-    def chooseprimary(self,fleet,method):
-        distances = []
-        for ship in range(0,len(fleet.ships)):
-            distances.append(self.currentanchor.calc_distance(fleet.ships[ship]))
-        return fleet.ships[np.argmin(distances)]
-
-    def fleet_choose_primary_now(self,fleet,method):
-        distances = []
-        for ship in range(0, len(fleet.ships)):
-            distances.append(self.currentanchor.calc_distance(fleet.ships[ship]))
-        self.currentprimary = fleet.ships[np.argmin(distances)]
-
-    def fleet_attack_procedure(self,target): #based off the ship class
-        if debug == 1:
-            print("Debug - main_attack_procedure\nRange of " + self.name + " to " + target.name + " :" + str(self.check_range(target)))
-        if self.check_range(target) > self.range:
-            self.currentanchor.move_ship_to(target)
-        else:
-            self.attack(target)
-
-    def attack_other_fleet(self,fleet,method):
-        if method == "Basic Anchor and attack":
-
-            if(self.currenttargetstatus != 1): #If our ship is not alive
-                self.currentprimary = self.chooseprimary(fleet,"closest")
-
-
-
-
-            if self.currentprimary.hp >0:
-                self.currenttargetstatus = 1
-                #attack if in range
-                for i in range(0,len(self.ships)):
-                    self.ships[i].current_target = self.currentprimary
-                    self.ships[i].main_attack_procedure(self.currentprimary,self)
-
-            elif self.currentprimary.hp <= 0:
-                self.currenttargetstatus = 0
-
-
-        if method == "Evasive":
-            pass
-        if method == "Break Anchor":
-            pass #oh jesus please help me oh lawd take the wheel
-
-
-        #Enemy Fleet
-
-        #get enemy fleet distances
-        #go for the shortest one
-        #attack at all costs
-
-        #distances = []
-
-        #for enemy in fleet.ships:
-
-        #for s in self.ships:
-    def choosenewanchor(self):
-        hp = []
-        for i in range(0,len(self.ships)):
-            hp.append(self.ships[i].hp)
-        self.set_anchor(self.ships[np.argmax(hp)])
-        #return fleet.ships[np.argmin(distances)]
-
-
-    def checkenemyfleetdead(self,fleet):
-        for i in range(0, len(fleet.ships)):
-            if fleet.ships[i].hp <= 0:
-                if fleet.currentanchor == fleet.ships[i]:
-                    fleet.choosenewanchor()
-                del fleet.ships[i]
-                return 1
-        return 0
-
-
-    def printstats(self):
-        listy = []
-
-        for s in self.ships:
-            print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
-            listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)))
-        return listy
 
 class location:
     def __init__(self,x,y,z):
@@ -178,10 +41,10 @@ class location:
 class ship:
     instances = []
 
-    def __init__(self, hitpoints,damage,range,speed,inertia,name,x,y,z,fleet,weapons):
+    def __init__(self, hitpoints,damage,targettingrange,speed,inertia,name,x,y,z,fleet,weapons):
         self.hp = hitpoints
         self.dps = damage
-        self.range = range
+        self.targettingrange = targettingrange
         self.speed = speed
         self.inertia = inertia
         self.name = name
@@ -221,7 +84,7 @@ class ship:
             self.damagedealt_this_tick = 0
             #Weapon miss
             return 0
-        if self.check_range(target) <= self.range: #todo: the self.range should be interpreted as a targetting range
+        if self.check_range(target) <= self.targettingrange: #todo: the self.range should be refactored as the targetting range AND NOT worded as if it is a turret range and falloff, that is simply wrong
             lower,upper,avg = self.calc_weapon_avg_dps_mod(target,test_value)
             target.hp -= self.weapon.dps*avg #todo: the dps should not sit at this average - it needs to modified based on the number received from the tohit
             self.damagedealt_this_tick = math.floor(self.weapon.dps*avg)
@@ -258,7 +121,7 @@ class ship:
             #find distance between old and new positions -> a
             a = target.loc.find_distance_for_translation()
             #Use cosine rule to find solution to angle A
-            #todo: a**2 = b**2 + c**2 -2bc
+            #Cosine rule is used and is the following equation a**2 = b**2 + c**2 -2bc
 
             sum = (a**2-b**2-c**2)/(-2*b*c)
 
@@ -268,8 +131,8 @@ class ship:
                 sum = -1
             self.angular_velocity = math.acos(sum)
             return math.acos(sum)
-            #math.asin will put it in terms of rads  #todo: warning, please check if the concept is sound
-            #todo:write test case for this function please using standard triangle
+            #math.asin will put it in terms of rads  # warning, please check if the concept is sound - yes it is
+            #todo:write test case for this function please using standard triangle - i dont know if its any good or not
             #note: cosine rule is compatible with right angle triangles
 
         return 1
@@ -323,7 +186,7 @@ class ship:
         self.distance_from_target = self.check_range(target)
         if debug == 1:
             print("Debug - main_attack_procedure\nRange of " + self.name + " to " + target.name + " :" + str(self.check_range(target)))
-        if self.check_range(target) > self.range:
+        if self.check_range(target) > self.targettingrange:
             #fleet.currentanchor.move_ship_to(target) #todo: is this ok?  Like what is going on here.  Is the anchor actually moving #[number of fleetmembers]# times
             #No, there is no movement, this is strictly an attack protocol.  Wtf, who coded this?  Oh it was me, Sajuuk
             self.damagedealt_this_tick = 0
@@ -333,13 +196,13 @@ class ship:
 
     def evasive_attack_procedure(self,target,evasiverange):
         self.distance_from_target = self.check_range(target)
-        if self.range < evasiverange:
-            evasiverange = self.range
+        if self.targettingrange < evasiverange:
+            evasiverange = self.targettingrange
             print("Incorrect Range/Evasive Range")
 
         if debug == 1:
             print("Debug - Evasive Attack Procedure\nRange of " + self.name + " to " + target.name + " :" + str(self.check_range(target)) + " ~ ~ Evasive Range Set - " + str(evasiverange))
-        if self.check_range(target) > self.range:
+        if self.check_range(target) > self.targettingrange:
             self.move_ship_to(target)
         elif self.check_range(target) < evasiverange:
             self.move_away_from(target)
@@ -419,22 +282,38 @@ if __name__=="__main__":
 
         print("End of round")
 
-        state = 2
-        while(state == 2):
+        state = "wait-state"
+        while(state == "wait-state"):
             if(UDP_Server_Client.Server_Client.send_packet(listenersock,state,UDP_IP_Address,Sender_Port_No)==-1):
                 print("Error")
             else:
-                state = 3
+                state = "packet_in"
 
-        while(state == 3):
-            print("Waiting for '4'")
-            state = str(UDP_Server_Client.Server_Client.receive_packet(serversock))
+        while(state == "packet_in"):  #receiving from menu
 
-            if(state != 3):
+            state = UDP_Server_Client.Server_Client.receive_packet(serversock).split(" ")
+
+
+
+
+            if(state != '3'):
                 print(state)
             if state == '4':
                 print("Moving on")
                 break
+            if state[0] == '5':
+                #UDP_Server_Client.Server_Client.send_packet(listenersock,state,UDP_IP_Address,Sender_Port_No)
+                X = state[1]
+                Y = state[2]
+                Z = state[3]
+                fleetname = state[4]
+
+
+                print("Move to certain location - for anchor \nX = something \nY = something \nZ = something")
+
+                break
+            if state == '1':
+                print("")
 
 
 

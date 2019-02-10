@@ -38,8 +38,33 @@ if __name__=="__main__":
             pass #what happens here?
 
         # data,addr = serversock.recvfrom(1024)
-        while(state == '2'):
-            state = input("press 4 to resume")
+        while(state == 'wait-state'):
+            valid_options = {'1','5','4'}
+            state = input("Menu\n1.\tChange Targets for which fleet against which fleet\n5.\tMove to certain spot with anchor\n4.\tMove to next round\n")
+            if state in valid_options:
+                print("Valid option")
+                if state == '5':
+                    X = input("X coordinate? ")
+                    Y = input("Y coordinate? ")
+                    Z = input("Z coordinate? ")
+                    fleet = input("Fleet name? ")
+
+                    state = str(state + " " + X + " " + Y + " " + Z + " " + fleet)
+                    clientsock.sendto(state.encode("utf-8"), (hostip, clientport))
+                    state = 'wait-state'
+                    continue
+                if state == '4':
+                    clientsock.sendto(state.encode("utf-8"), (hostip, clientport))
+                    state = 'wait-state'
+                    print("Continuing on...")
+                    break
+
+
+            else:
+                print("\nError + " + str(state))
+                state = 'wait-state'
+                continue
+
             clientsock.sendto(state.encode("utf-8"),(hostip,clientport))
             print("breaking back to previous while - state = " + state)
             #send_packet(clientsock, state, hostip, clientport)
