@@ -232,7 +232,8 @@ if __name__=="__main__":
     FleetRed = fleet("Red",40)
     FleetBlue = fleet("Blue",50)
     serversock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-    serversock.bind((UDP_IP_Address, UDP_port_no))
+    serversock.bind(("", UDP_port_no))
+    remoteip = "192.168.178.22"
     listenersock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 
@@ -272,11 +273,11 @@ if __name__=="__main__":
 
 
         line = printstatsheader()
-        listenersock.sendto(line.encode('UTF-8'), (UDP_IP_Address, Sender_Port_No))
+        listenersock.sendto(line.encode('UTF-8'), (remoteip, Sender_Port_No))
         #listenersock.sendto(FleetRed.printstats(),(UDP_IP_Address,Sender_Port_No))
         listy = FleetRed.printstats()
         for i in range(0,len(listy)):
-            listenersock.sendto(listy[i].encode('UTF-8'),(UDP_IP_Address,Sender_Port_No))
+            listenersock.sendto(listy[i].encode('UTF-8'),(remoteip,Sender_Port_No))
 
         FleetBlue.printstats()
 
@@ -284,7 +285,7 @@ if __name__=="__main__":
 
         state = "wait-state"
         while(state == "wait-state"):
-            if(UDP_Server_Client.Server_Client.send_packet(listenersock,state,UDP_IP_Address,Sender_Port_No)==-1):
+            if(UDP_Server_Client.Server_Client.send_packet(listenersock,state,remoteip,Sender_Port_No)==-1):
                 print("Error")
             else:
                 state = "packet_in"
