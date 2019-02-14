@@ -15,6 +15,7 @@ class fleet():
         z = 0
         self.anchor_goto_loc = location(0,0,0)
         self.engagementrange = engagementdistance
+        self.anchordistance = 0
 
     def add_ship_to_fleet(self,ship):
         self.ships.append(ship)
@@ -23,6 +24,7 @@ class fleet():
         for i in self.ships:
             if i.name == ship.name:
                 del i
+
 
 
     def range_from_anchor(self,ship):
@@ -43,14 +45,14 @@ class fleet():
     def anchor_move_to_target(self,target):
         pass
 
-    def anchorup(self,distance):
+    def anchorup(self):
         not_everyone_anchored = False
         for i in range(0, len(self.ships)):
             if self.ships[i].is_anchor == True:
                 if self.currentanchor.check_range(self.currentprimary) > self.engagementrange:
                     self.currentanchor.move_ship_to(self.currentprimary)
                 continue
-            if self.ships[i].calc_distance(self.currentanchor) > distance:
+            if self.ships[i].calc_distance(self.currentanchor) > self.anchordistance:
                 self.ships[i].move_ship_to(self.currentanchor)
                 not_everyone_anchored = True
         if not_everyone_anchored == True:

@@ -256,8 +256,8 @@ if __name__=="__main__":
     FleetRed.fleet_choose_primary_now(FleetBlue,"closest")
     FleetBlue.fleet_choose_primary_now(FleetRed, "closest")
     while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
-        FleetRed.anchorup(5)
-        FleetBlue.anchorup(10)
+        FleetRed.anchorup()
+        FleetBlue.anchorup()
 
         #Attack
         FleetRed.attack_other_fleet(FleetBlue,"Basic Anchor and attack")
