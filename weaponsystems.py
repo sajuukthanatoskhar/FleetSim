@@ -1,15 +1,16 @@
 import ship
 import numpy as np
 class turret():
-    def __init__(self, optimal, falloff, dps, name,wsa):
+    def __init__(self, optimal, falloff, dps, name,wsa,turretsig):
         self.optimal = optimal
         self.falloff = falloff
         self.dps = dps
         self.name = name
-        self.tracking = self.convert_wsa_rads(wsa)
 
+        self.turretsig = turretsig
+        self.tracking = self.convert_wsa_rads(wsa)
     def convert_wsa_rads(self,wsa):
-        return wsa #todo convert wsa to rads, but I am on a plane and can't check the formula RIP
+        return wsa*self.turretsig/40000 #todo convert wsa to rads, but I am on a plane and can't check the formula RIP
 
     def fire_weapon(self):
         return self.dps
