@@ -92,7 +92,7 @@ class world():
     def update_fleet_information(self):
         pass
 
-
+#fixme get rid of safely
     def FleetGeneration(self):
         while(True):
             state = input("Fleets or Ships?")
@@ -117,12 +117,62 @@ class world():
                           "\n4. View Fleets made\n5. View Ships made\n6. View Turrets\n7. Go back")
             if state == '1':
                 fleetname = input("Name of Fleet? $ ")
+                shipsinfleet = []
+                numshipsinfleet = []
+                shiplist = self.view("ship")
+                choice = -1
+                while(choice == -1):
+                    choice = -1
+
+                    while(int(choice) <= -1 or int(choice) >= len(shiplist)-1):
+                        print("%15s\t%10s\t%10s\t%10s\t%10s\t%10s" % ("Ship Name", "HP", "Target Range", "Max Speed", "Signature", "Turret"))
+                        for i in shiplist:
+                            filet = open(i,'r')
+                            content = filet.readlines()
+                            #todo print out optimal falloff and dps
+                            print("%15s\t%10s\t%10s\t%10s\t%10s\t%10s" % (
+                            content[0][:-1], content[1][:-1], content[2][:-1], content[3][:-1], content[4][:-1],
+                            content[5][:-1]))
+
+                        choice = int(input("Choose a ship type for the fleet"))
+
+                        if (choice <= -1 or choice >= len(shiplist)):
+                            print("\nError:Choose a valid number!\n")
+                            choice = -1
+                            continue
+                        else:
+                            number = input('How many ships in fleet? $ ')
+                            shipsinfleet.append(shiplist[choice])
+                            numshipsinfleet.append(number)
+                            while(True):
+                                wantmorequery = input("Need more ships for fleet?  ")
+                                if wantmorequery == 'y' or wantmorequery == 'n':
+                                    if wantmorequery == 'y':
+                                        choice = -1
+                                        continue
+                                    if wantmorequery == 'n':
+                                        choice = 0
+                                        break
+                                else:
+                                    print("Error")
+
+
+
+
+
                 f = open(fleetname + ".fleet","w+")
-                f.write("fname\t" + str(fleetname))
+                f.write(str(fleetname))
+
+                if len(shipsinfleet) == len(numshipsinfleet):
+                    f.write("\n" + str(len(shipsinfleet)))
+                    for i in range(0,len(shipsinfleet)):
+                        f.write("\n" + str(shipsinfleet[i]) + " " + str(numshipsinfleet[i]))
+
+
                 f.close
             if state == '2':
                 shipspecs = []
-                shipspecs.append(input("Name of Ship $ "))
+                shipspecs.append(input("Name of - $ "))
                 shipspecs.append(input("Hitpoints of Ship $ "))
                 shipspecs.append(input("Targetting Range of Ship $ "))
                 shipspecs.append(input("Speed of Ship $ "))
@@ -178,6 +228,9 @@ class world():
             if state == '7':
                 return -1
 
+    def read_ship(self, shipfile):
+        pass
+
     def view(self, param):
         availabilitylist = [] # for shipcreation
         count = 0
@@ -200,24 +253,71 @@ class players():
         print("\nMade player! Name " + self.name + " address " + self.address)
 
 
+def printMMD():
+    print("                                                          .-:-°\n\
+                                                        °omysyhy/°°°°   °-/o:°\n\
+                                                       :dNhsoo+/sddhhhhhdhh/hy°\n\
+                                                     -ymdyyhhmmh+/yyyyyssyy-.M-\n\
+                                                  °-smdyyyhhhNMNmyossssso:-°.M°\n\
+                               °.-/++oooo++++++/:ohdhyyyhhhhhdNNNdyyssssss+.-M/\n\
+                              -hhsoo+ooosssoooosyhmmdhhhhhhhhhhhhhhhyyssssss:sN/\n\
+                              +Mdossyhhhhhhhyssooosydddhhyyyyyyyyhhhhhyssssss:sN/\n\
+                              .NMdhdmmmNhhhdMmssssyyyhhhhhhhyyysssyhhhhyssssss.yN/\n\
+                               dMmysyyhm.°.oMmssyyhhhhhhhhhhhhhhyyyyhhhhyssssso.hN-\n\
+                             °.oMmyssshNdhdmMNyyhhhhhhhhhhhhhhhhhhhyhhhhhysssss+-Nh\n\
+                           -shhNNdhyyhhhdddNMmhhhhhhhhhhhhhhhhhddhhhhhhhhhyyyyss:sN.\n\
+                          oNdsoNdhhhhhhdmNNNmhhhhhhhdhhhhddhhhhNyddddddddhhhhhyysoM-\n\
+                         .NdsyddhhhhhhdddddhhhhhhhhdmmmdmhhmNNNNdsdm/-dNNmmmdhmdymd.\n\
+                         +Mhyhhhhhhhhhhhhhhhhhhhhhhdh/hN/ °hddhhddmm/sdyyhdN+°hNhoosn\n\
+                         sMhhhyyssyyyhhhhhhhhhhhhhyhNdmm/ hdhhhhhhhdmmyysyhNsyMy-oo°\n\
+                         +MdhhsssssssyyhhhhhhhhyyydMNNmNy+mhhhhhhhhhhhhhssshhyNms-\n\
+                         :MmhysssyyysssyyyyyyssyyNMNdhhdNNhhhhhhhhhhhhhhyssssyN+\n\
+                         .MmhssyyhhhyyhhhhyyyhdmNNmhhysshNhhhhhhhhhhhhhyssyyhNd°\n\
+                          NNysyhhhhyhNmmmmNNNNNmdhhhysssyyyyyyhhhhhhhyyyyhdNmo°\n\
+                          dNysyhhdmhmhhhhhhhhhhhhhysssssyyhhhhhhhhyyyhmdyo/.\n\
+                          sMyyyhhdNmhhhyyyyyyyyyyssssyyhhhhhhhhhyydmdoNo\n\
+                          /MhymyhdNdhyysssssssssssyyhhyyhhhhhhhyddhss-N:\n\
+                          -Mdymdyhmmhhhyssssssyyhhhhyyyhhhhhhhyhhhys-om°\n\
+                          °NmydNyhhmdhhysssyyhhhhyyhhdhhhhhhhhhhyss:-N-\n\
+                           mNyhdNyyhhhyyssyhhhhhdddhhhhhhhhhhhysss::m/\n\
+                          -mNyhhmmyyyssssyhddmNNdhhyyyhhhhhhyyss+.om/\n\
+                       -ohmdMyyhhmNdhyhhdmNmdhyyyysyhddmmmmdhho/+dy-\n\
+                      :NMN/+MysyhhhmNmmddhyyysssyyhhhhhhhyyhydNhs-°\n\
+                      .NMm.°NmysyhhyNdhysssssyyhhhhhhhhhhyso.hhms-\n\
+                       mMMs°-hmyyyhhhNdhyyyyhhhhhhhhhhhhyso-yhyN/h-\n\
+                      °NMMNo°°-shhhhhhmdhhhhhhhhhhhhhhhyyyhddho. s/\n\
+                      sMMMMNy-° °./shhdNmmmmmmddddhhhddhys+:.°   dh°\n\
+                     :NMMMMMNmy/.   °°....-....-yymdmNdds.      +hmh°\n\
+                     /mmNMMMMMNNho-°          °yNdmmmmmmNy°    :Nyoyh°\n\
+                      sdhmNMMMMMMNmh+.°       oNhhhhhhhooN+   :hmm-m+y\n\
+                      :NmhhmNMMMMMMMNds/-.°   mNmhyhmmmhsNd°.oNd+yyMsy+\n\
+                      oMMNmhdmNMMMMMMMNmdhs+:-mdhddNdddsmdmo/.mMNdsod-m.\n\
+                     .NMMMMMNdhmMMMMMMMMMNddmdmy:.:Nhhhy/d:° °NMMMMyhsoh°\n\
+                    °yNNMMMMMMNMMMMMMMMMMNNhy:.°  smhhhhoo+  -MMMMMmNN-m+\n\
+                    omyNMMMMMmhmMMMMMMMMMNdhh.   :dhhhhhh+y/ +MMMMMMMMy:N.\n\
+                   .hooyddddddyoydddddddddds+/  .yyyyyyyys:h/hddddddddd-ss\n\
+                    °   °°°°°°°  °°°°°°°°°°° °              °°°°°°°°°°°  °                          ")
+
+
 if __name__=="__main__":
     main_world = world()
 
-    small_autocannon = weaponsystems.turret(100, 80, 90, "Small Autocannon", 8,40)
-    FleetRed = fleet("Red",40)
-    FleetBlue = fleet("Blue",50)
+    #small_autocannon = weaponsystems.turret(100, 80, 90, "Small Autocannon", 8,40)
+    #FleetRed = fleet("Red",40)
+    #FleetBlue = fleet("Blue",50)
 
-    for i in range(0,10,1):
-        FleetRed.ships.append(ship(800,2,60,5,1,"Thanatos_"+str(i),random.randint(30,150),random.randint(30,150),20,FleetRed,small_autocannon))
-        FleetBlue.ships.append(ship(500,2,70,2,1,"Nyx_" +str(i),50,150,20,FleetBlue,small_autocannon))
+    # for i in range(0,10,1):
+    #     FleetRed.ships.append(ship(800,2,60,5,1,"Thanatos_"+str(i),random.randint(30,150),random.randint(30,150),20,FleetRed,small_autocannon))
+    #     FleetBlue.ships.append(ship(500,2,70,2,1,"Nyx_" +str(i),50,150,20,FleetBlue,small_autocannon))
 
 
 
     state = 0
 
-
+    printMMD()
     while(True):
-        menu_state = input("1.\tMake fleet?\n2.\tBattlefleets?\n3.\tQuit")
+
+        menu_state = input("\n\nTEST Alliance Fleet Simulator \n1.\tMake fleet?\n2.\tBattlefleets?\n3.\tQuit\n\nMake your choice, Fleet Commander of Test... \n $ ")
         if menu_state == '1':
             main_world.buildfleet()
 
