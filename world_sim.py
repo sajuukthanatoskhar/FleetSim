@@ -8,12 +8,10 @@ class world():
         self.Sender_Port_No = 6790
         self.UDP_IP_Address = "127.0.0.1"
         self.serversock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.serversock.bind(("", self.UDP_port_no))
+        self.serversock.bind(("", self.UDP_port_no))  # We are listening on 6789
         self.remoteip = "192.168.178.22"
         self.listenersock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.Howmanyplayers = 2
-
-
+        self.Howmanyplayers = 1
 
         self.fleets = []
         self.ships = []
@@ -33,8 +31,42 @@ class world():
     def destroyed_ships_processing(self):
         pass
 
-    def ship_allocation(self):
+    def present_fleetchoices(self):
         pass
+
+    def ship_allocation(self):
+        for i in self.playersplaying:
+            choice = -1
+            while(choice != -2):
+                fleetchoices= self.view("fleet")
+
+                Fleetstring = ""
+
+                for j in range(0,len(fleetchoices)):
+                    Fleetstring = str(j) + ". " + fleetchoices[j] + "\n"
+
+
+                message = "\nPlayer, which fleet do you want?  If you don't want to add a fleet, do -1"
+                message = Fleetstring + message
+                self.listenersock.sendto(message.encode("utf-8"),(i.address,int(i.port)))
+                data,address = self.serversock.recvfrom(1024)
+                #if choice.isdigit() & int(choice) > -1 & int(choice) < len(fleetchoices):
+                choice = int(data)
+                print(data)
+                if int(choice) > -1 and int(choice) < len(fleetchoices):
+                    i.add_fleet(fleetchoices[choice])
+                elif int(choice) == -2:
+                    choice = -2
+
+                #todo: after fleets have been chosen by all players, we move on to battle
+
+
+
+
+
+
+
+
 
 
 
@@ -47,22 +79,45 @@ class world():
 
 
         if state == 1:
-            self.give_fleets()
+            count = 0
+            print("\nAllocating Fleets to players, please wait")
+            for player in self.playersplaying:
+                print(player.name)
+                playerreceived = player.name
+                print(player.name + " " + player.address + " " + player.port)
+                self.listenersock.sendto(playerreceived.encode("utf-8"), (player.address, int(player.port)))
+                data,addr = self.serversock.recvfrom(1024)
+                data = data.decode('utf-8')
+                if data == "ok":
+                    count = 1 + count
+            print("count = %s"%str(count))
+            state = 2
+
+
 
 
 
         if state == 2:
-            print("%-30s %-20s %-50s" % ("Player Name","Address","Owned Fleets"))
-            for i in range(0,len(self.playersplaying)):
-                ownedshipslist = ""
-                for j in range(0,len(self.playersplaying[i].owned_fleets)):
-                    ownedshipslist = ownedshipslist + "," + self.playersplaying[i].owned_fleets[j]
-                print("%-30s %-20s %-50s" % (self.playersplaying[i].name, self.playersplaying[i].address[0], str(ownedshipslist)))
+            statechoice = -1
+            while(statechoice == -1):
+                print("%-30s %-20s %-50s" % ("Player Name","Address","Owned Fleets\n"))
+                for i in range(0,len(self.playersplaying)):
+                    ownedshipslist = ""
+                    for j in range(0,len(self.playersplaying[i].owned_fleets)):
+                        ownedshipslist = ownedshipslist + "," + self.playersplaying[i].owned_fleets[j]
+                    print("%-30s %-20s %-50s" % (self.playersplaying[i].name, self.playersplaying[i].address, str(ownedshipslist)))
 
+                self.ship_allocation()  # todo players need to get fleets.
+                statechoice = 0
+                state = 3
+        if state == 3:
+            #todo:  at this point, fleets aren't a thing yet, they need to be loaded into existence.
+            #todo: then after the loading, they need to be placed on the field, given an anchor
 
-            self.ship_allocation()
-            #wait for players
-            #collect ips
+            #todo: we do battle ehre, all players should have their fleets at this point.   The word needs to set up a battle arena .
+            #todo: need anchor for
+            while(True):
+                print("Fleet Fighting Mode")
 
         return state
 
@@ -75,8 +130,9 @@ class world():
         if "fleetplayer" in data:
             #format will be 'fleetplayer,name'
             massdata = data.split(',')
-            self.playersplaying.append(players(str(massdata[1]),str(addr)))
-
+            self.playersplaying.append(players(str(massdata[1]),str(addr),str(massdata[2])))
+            for i in massdata:
+                print(i)
 
 
     def get_names_players(self):
@@ -91,24 +147,6 @@ class world():
     '''
     def update_fleet_information(self):
         pass
-
-#fixme get rid of safely
-    def FleetGeneration(self):
-        while(True):
-            state = input("Fleets or Ships?")
-            while(state == 0):
-                pass
-            while(state == 1):
-                name_ship = input("\nName of Ship?")
-                ship_file = open(name_ship+".shfit","w+")
-                ship_hp = input("\nHP of ship?")
-                ship_dps = input("\nDPS of ship?")
-                ship_speed = input("\nName of Ship?")
-                ship_targetting = input("\ntargetting range")
-                ship_signature = input("\nshipsig?")
-                ship_input("\nName of Ship?")
-            while(state == 2):
-                return 0
 
     def buildfleet(self):
         state = -1
@@ -244,13 +282,24 @@ class world():
         print('******************************************************************')
         return availabilitylist
 
+    def give_fleets(self):
+        #todo players will receive a signal signalling what fleets there are, there should be a summary of things maybe
+        pass
+
 
 class players():
-    def __init__(self,name,addr):
-        self.address = addr
+    def __init__(self,name,addr,port):
+        self.address = addr.split(',')
+        self.address = self.address[0][2:-1]
         self.owned_fleets = []
         self.name = name
+        self.port = port
         print("\nMade player! Name " + self.name + " address " + self.address)
+
+    def add_fleet(self, fleet):
+        self.owned_fleets.append(fleet)
+
+
 
 
 def printMMD():
