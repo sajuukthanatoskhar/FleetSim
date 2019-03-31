@@ -18,20 +18,20 @@ class fleet():
         self.engagementrange = None
         self.anchordistance = 0
 
-    def __init__(self,name,engagementdistance):
-        self.__class__.fleets.append(weakref.proxy(self)) #all fleets are tracked because why not
-        self.name = name
-        self.ships = []
-        self.is_anchor = False
-        self.currentanchor = None
-        self.currenttargetstatus = -1  #-1 Not set, 0 is dead, 1 is alive
-        self.currentprimary = None
-        z = 0
-        y = 0
-        z = 0
-        self.anchor_goto_loc = location(0,0,0)
-        self.engagementrange = engagementdistance
-        self.anchordistance = 0
+    # def __init__(self,name,engagementdistance):
+    #     self.__class__.fleets.append(weakref.proxy(self)) #all fleets are tracked because why not
+    #     self.name = name
+    #     self.ships = []
+    #     self.is_anchor = False
+    #     self.currentanchor = None
+    #     self.currenttargetstatus = -1  #-1 Not set, 0 is dead, 1 is alive
+    #     self.currentprimary = None
+    #     z = 0
+    #     y = 0
+    #     z = 0
+    #     self.anchor_goto_loc = location(0,0,0)
+    #     self.engagementrange = engagementdistance
+    #     self.anchordistance = 0
 
     def add_ship_to_fleet(self,ship):
         self.ships.append(ship)

@@ -1,5 +1,6 @@
 from fleet import *
 import socket
+from players import *
 from UDP_Server_Client.Server_Client import *
 
 class world():
@@ -46,7 +47,7 @@ class world():
                     Fleetstring = str(j) + ". " + fleetchoices[j] + "\n"
 
 
-                message = "\nPlayer, which fleet do you want?  If you don't want to add a fleet, do -1"
+                message = "\nPlayer, which fleet do you want?  If you don't want to add a fleet, do -2"
                 message = Fleetstring + message
                 self.listenersock.sendto(message.encode("utf-8"),(i.address,int(i.port)))
                 data,address = self.serversock.recvfrom(1024)
@@ -116,8 +117,12 @@ class world():
 
             #todo: we do battle ehre, all players should have their fleets at this point.   The word needs to set up a battle arena .
             #todo: need anchor for
+            for player in self.playersplaying:
+                print("%s having fleets loaded...\n"%player.name)
+                self.loadplayerfleets(player)
             while(True):
                 print("Fleet Fighting Mode")
+
 
         return state
 
@@ -286,18 +291,15 @@ class world():
         #todo players will receive a signal signalling what fleets there are, there should be a summary of things maybe
         pass
 
+    def loadplayerfleets(self, player):
+        count = 0
+        for fleet in player.owned_fleets:
+            player.owned_fleets[count] = player.populatefleet(fleet)
+            count += 1
 
-class players():
-    def __init__(self,name,addr,port):
-        self.address = addr.split(',')
-        self.address = self.address[0][2:-1]
-        self.owned_fleets = []
-        self.name = name
-        self.port = port
-        print("\nMade player! Name " + self.name + " address " + self.address)
 
-    def add_fleet(self, fleet):
-        self.owned_fleets.append(fleet)
+
+
 
 
 

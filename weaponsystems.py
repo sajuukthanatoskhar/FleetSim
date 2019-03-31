@@ -1,5 +1,7 @@
 import ship
 import numpy as np
+
+
 class turret():
     def __init__(self, optimal, falloff, dps, name,wsa,turretsig):
         self.optimal = optimal
@@ -26,3 +28,16 @@ class turret():
 
 class missile_turret():
     pass
+
+
+def parse_weapon(weapon):
+    weaponfile = open(weapon, 'r')
+    weaponlines = weaponfile.readlines()
+    name,optimal,falloff,dps,wsa = map(str,weaponlines)
+    # shipspecs.append(input("Name of Turret"))
+    # shipspecs.append(input("Optimal of Turret"))
+    # shipspecs.append(input("Falloff of Turret"))
+    # shipspecs.append(input("DPS of Turret"))
+    # shipspecs.append(input("WSA of Turret"))
+    weapon = turret(int(optimal),int(falloff),int(dps),name,int(wsa),0)
+    return weapon
