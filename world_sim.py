@@ -66,8 +66,8 @@ class world():
 
 
 
-
-
+    def update_world_population(self,fleet):
+        pass
 
 
 
@@ -120,8 +120,31 @@ class world():
             for player in self.playersplaying:
                 print("%s having fleets loaded...\n"%player.name)
                 self.loadplayerfleets(player)
-            while(True):
-                print("Fleet Fighting Mode")
+            print("Loading Players 100 km from each other")
+
+            capitulationstatus = 0
+            count = 0
+            for players in self.playersplaying:
+                for singleplayerfleets in players.owned_fleets:
+                    for shippyships in singleplayerfleets.ships: #I can't remember if there is a naming conflict for any of these
+                        shippyships.loc.x = 100*math.sin(2*3.14*0/len(self.playersplaying))
+                        shippyships.loc.y = 0
+                        shippyships.loc.z = 0
+                    self.setanchorforplayer_fleet(players,singleplayerfleets)
+                    singleplayerfleets.printstats()
+                count += 1
+
+            print("loaded players")
+
+        '''
+        #todo:eed to fill in the following
+        allow players to set anchors
+        allow players to move fleets
+        allow players to toggle attacking
+        allow players to set primary
+        '''
+        while(True):
+            print("loaded Fleets, awaiting battle")
 
 
         return state
@@ -277,7 +300,7 @@ class world():
     def view(self, param):
         availabilitylist = [] # for shipcreation
         count = 0
-        print('\n***********************************************************\nSaved %ss\n-----------'%param)
+        print('\n***********************************************************\n\nSaved %ss\n-----------'%param)
         for i in os.listdir():
             if '.' + param in i:
 
@@ -297,11 +320,14 @@ class world():
             player.owned_fleets[count] = player.populatefleet(fleet)
             count += 1
 
+    def setanchorforplayer_fleet(self, players, singleplayerfleets):
+        setanchormsg = "%s is being requested to select an anchor..." % players.name
+        self.message_to_all_players(setanchormsg)
+        singleplayerfleets.choosenewanchor()
 
-
-
-
-
+    def message_to_all_players(self, setanchormsg):
+        for playerstobemessage in self.playersplaying:
+            self.listenersock.sendto(setanchormsg.encode("utf-8"), (playerstobemessage.address, int(playerstobemessage.port)))
 
 
 def printMMD():

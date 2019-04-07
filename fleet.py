@@ -156,6 +156,14 @@ class fleet():
         listy = []
 
         for s in self.ships:
-            print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
-            listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)))
+            if s.current_target == None:
+                print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
+                s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
+                s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity))
+                listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
+                s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
+                s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity)))
+            else:
+                print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
+                listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)))
         return listy
