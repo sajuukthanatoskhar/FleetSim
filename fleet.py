@@ -17,6 +17,7 @@ class fleet():
         self.anchor_goto_loc = location(0,0,0)
         self.engagementrange = None
         self.anchordistance = 0
+        self.fleet_capitulation_status = 0
 
     # def __init__(self,name,engagementdistance):
     #     self.__class__.fleets.append(weakref.proxy(self)) #all fleets are tracked because why not
@@ -40,6 +41,7 @@ class fleet():
         for i in self.ships:
             if i.name == ship.name:
                 del i
+
 
 
 

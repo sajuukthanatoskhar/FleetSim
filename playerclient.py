@@ -2,11 +2,13 @@ import socket
 import sys
 import codecs
 import random
+import sys
 if __name__=="__main__":
     hostip= "127.0.0.1"
     hostport = random.randint(6700,10000)
     clientport = 6789
-    initialMessage = "fleetplayer,sajuuk," + str(hostport)
+    name = sys.argv[1]
+    initialMessage = "fleetplayer,%s,%s" % (name,str(hostport))
     print(initialMessage)
     playerlistenerclient = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     playerlistenerclient.bind(("",hostport))
@@ -42,6 +44,13 @@ if __name__=="__main__":
             break
         else:
             print("Error")
+
+    player_capitulation_status = 0
+    while player_capitulation_status == 0:
+        print("Capitulation State 0")
+        data, addr = playerlistenerclient.recvfrom(1024)
+        #todo:check that the addr is the server (lol)
+        print(data.decode("utf-8"))
 
 
 

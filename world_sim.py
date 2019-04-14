@@ -4,7 +4,7 @@ from players import *
 from UDP_Server_Client.Server_Client import *
 
 class world():
-    def __init__(self):
+    def __init__(self,numplayers):
         self.UDP_port_no = 6789
         self.Sender_Port_No = 6790
         self.UDP_IP_Address = "127.0.0.1"
@@ -12,7 +12,9 @@ class world():
         self.serversock.bind(("", self.UDP_port_no))  # We are listening on 6789
         self.remoteip = "192.168.178.22"
         self.listenersock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.Howmanyplayers = 1
+        self.Howmanyplayers = numplayers
+
+
 
         self.fleets = []
         self.ships = []
@@ -112,11 +114,7 @@ class world():
                 statechoice = 0
                 state = 3
         if state == 3:
-            #todo:  at this point, fleets aren't a thing yet, they need to be loaded into existence.
-            #todo: then after the loading, they need to be placed on the field, given an anchor
 
-            #todo: we do battle ehre, all players should have their fleets at this point.   The word needs to set up a battle arena .
-            #todo: need anchor for
             for player in self.playersplaying:
                 print("%s having fleets loaded...\n"%player.name)
                 self.loadplayerfleets(player)
@@ -127,15 +125,78 @@ class world():
             for players in self.playersplaying:
                 for singleplayerfleets in players.owned_fleets:
                     for shippyships in singleplayerfleets.ships: #I can't remember if there is a naming conflict for any of these
-                        shippyships.loc.x = 100*math.sin(2*3.14*0/len(self.playersplaying))
+                        shippyships.loc.x = 100*math.cos(3.14*count/len(self.playersplaying))
                         shippyships.loc.y = 0
                         shippyships.loc.z = 0
                     self.setanchorforplayer_fleet(players,singleplayerfleets)
                     singleplayerfleets.printstats()
                 count += 1
+                print(count)
 
+            #todo: then after the loading, they need to be placed on the field, given an anchor
+
+            #todo: we do battle ehre, all players should have their fleets at this point.   The word needs to set up a battle arena .
+            #todo: need anchor for
             print("loaded players")
+            fletchoicenumber = input("Waiting on you not me! $ ")
+            while (True):
+                for players in self.playersplaying:
+                    for singleplayerfleets in players.owned_fleets:
+                        if singleplayerfleets.fleet_capitulation_status == 0:
+                            if singleplayerfleets.currentprimary == None or singleplayerfleets.currentanchor == None:
+                                if singleplayerfleets.currentprimary == None:
+                                    message = "%s Primary - None" % singleplayerfleets.name
+                                    self.listenersock.sendto(message.encode("utf-8"), (players.address, int(players.port)))
+                                    self.message_to_all_players("Pausing Game for Primary Change")
+                                    data, addr = self.serversock.recvfrom(1024)
 
+                                if singleplayerfleets.currentanchor == None:
+                                    message = "%s Anchor - None" % singleplayerfleets.name
+                                    self.listenersock.sendto(message.encode("utf-8"), (players.address, int(players.port)))
+                                    self.message_to_all_players("Pausing Game for Anchor Change")
+                                    data,addr = self.serversock.recvfrom(1024)
+                        elif singleplayerfleets.fleet_capitulation_status == 1:
+                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+                # For loop for moving ships and anchors#todo: check code
+                for players in self.playersplaying:
+                    for singleplayerfleets in players.owned_fleets:
+                        if singleplayerfleets.fleet_capitulation_status == 0:
+                            if(len(singleplayerfleets.ships))>0:
+                                singleplayerfleets.anchorup()
+                        elif singleplayerfleets.fleet_capitulation_status == 1:
+                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+                # For loop for attacking ships #todo: check code
+                for players in self.playersplaying:
+                    for singleplayerfleets in players.owned_fleets:
+                        if singleplayerfleets.fleet_capitulation_status == 0:
+                            pass
+                        elif singleplayerfleets.fleet_capitulation_status == 1:
+                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+                #For loop for checking dead ships #todo: check code
+                for players in self.playersplaying:
+                    for singleplayerfleets in players.owned_fleets:
+                        if singleplayerfleets.fleet_capitulation_status == 0:
+                            processing_dead = 1
+                            while (processing_dead):
+                                processing_dead = singleplayerfleets.checkenemyfleetdead(singleplayerfleets)
+                        elif singleplayerfleets.fleet_capitulation_status == 1:
+                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+                # For loop for printing fleet ships #todo: check code
+                for players in self.playersplaying:
+                    for singleplayerfleets in players.owned_fleets:
+                        if singleplayerfleets.fleet_capitulation_status == 0:
+                            line = printstatsheader()
+                            listenersock.sendto(line.encode('UTF-8'), (players.address, int(players.port)))
+                            listy = singleplayerfleets.printstats()
+                            for i in range(0, len(listy)):
+                                self.listenersock.sendto(listy[i].encode('UTF-8'), (players.address, int(players.port)))
+                        elif singleplayerfleets.fleet_capitulation_status == 1:
+                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+
+
+                    pass
+                #todo: do things
+                print("loaded Fleets, awaiting battle")
         '''
         #todo:eed to fill in the following
         allow players to set anchors
@@ -143,14 +204,18 @@ class world():
         allow players to toggle attacking
         allow players to set primary
         '''
-        while(True):
-            print("loaded Fleets, awaiting battle")
+
 
 
         return state
 
 
 
+    def sendfleetdata(self,type,player):
+        if type == "Anchor select":
+            pass
+        if type == "big list":
+            pass
 
     def collect_ip_players(self):
         data, addr = self.serversock.recvfrom(1024)
@@ -377,7 +442,7 @@ def printMMD():
 
 
 if __name__=="__main__":
-    main_world = world()
+    main_world = world(2)
 
     #small_autocannon = weaponsystems.turret(100, 80, 90, "Small Autocannon", 8,40)
     #FleetRed = fleet("Red",40)
