@@ -145,13 +145,13 @@ class world():
                         if singleplayerfleets.fleet_capitulation_status == 0:
                             if singleplayerfleets.currentprimary == None or singleplayerfleets.currentanchor == None:
                                 if singleplayerfleets.currentprimary == None:
-                                    message = "%s Primary - None" % singleplayerfleets.name
+                                    message = "NoPrimary:%s Primary - None" % singleplayerfleets.name
                                     self.listenersock.sendto(message.encode("utf-8"), (players.address, int(players.port)))
                                     self.message_to_all_players("Pausing Game for Primary Change")
                                     data, addr = self.serversock.recvfrom(1024)
-
+                                    #data, address = self.serversock.recvfrom(1024)
                                 if singleplayerfleets.currentanchor == None:
-                                    message = "%s Anchor - None" % singleplayerfleets.name
+                                    message = "NoAnchor:%s Anchor - None" % singleplayerfleets.name
                                     self.listenersock.sendto(message.encode("utf-8"), (players.address, int(players.port)))
                                     self.message_to_all_players("Pausing Game for Anchor Change")
                                     data,addr = self.serversock.recvfrom(1024)
@@ -185,16 +185,21 @@ class world():
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
                         if singleplayerfleets.fleet_capitulation_status == 0:
+
                             line = printstatsheader()
-                            listenersock.sendto(line.encode('UTF-8'), (players.address, int(players.port)))
+                            self.listenersock.sendto(line.encode('UTF-8'), (players.address, int(players.port)))
                             listy = singleplayerfleets.printstats()
                             for i in range(0, len(listy)):
                                 self.listenersock.sendto(listy[i].encode('UTF-8'), (players.address, int(players.port)))
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+                for players in self.playersplaying:
+                    self.listenersock.sendto("End:Send p to continue".encode('UTF-8'), (players.address, int(players.port)))
+                    data, addr = self.serversock.recvfrom(1024)
 
 
-                    pass
+
+
                 #todo: do things
                 print("loaded Fleets, awaiting battle")
         '''

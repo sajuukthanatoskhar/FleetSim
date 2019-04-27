@@ -3,6 +3,7 @@ import sys
 import codecs
 import random
 import sys
+import os
 if __name__=="__main__":
     hostip= "127.0.0.1"
     hostport = random.randint(6700,10000)
@@ -45,14 +46,32 @@ if __name__=="__main__":
         else:
             print("Error")
 
+
     player_capitulation_status = 0
     while player_capitulation_status == 0:
+        if os.name == 'nt':
+            _ = os.system('cls')
         print("Capitulation State 0")
         data, addr = playerlistenerclient.recvfrom(1024)
         #todo:check that the addr is the server (lol)
         print(data.decode("utf-8"))
-
-
+        data = "0"
+        while(data!= "ENDGAME"):
+            data, addr = playerlistenerclient.recvfrom(1024)
+            print(data.decode("utf-8"))
+            data = str(data.decode("utf-8")).split(":")
+            if data[0] == "End":
+                print("End")
+            if data[0] == "NoAnchor":
+                print("NoAnchor")
+            if data[0] == "NoPrimary":
+                print("NoPrimary")
+            if data[0] == "Status Update":
+                print("Status Update")
+            if data[0] == "StatusCap":
+                print("Status Update")                
+            responsecmd = input("Send p to continue $ ")
+            playerclient_toserver.sendto(responsecmd.encode("utf-8"), (hostip, clientport))
 
 
 

@@ -67,7 +67,9 @@ class fleet():
         not_everyone_anchored = False
         for i in range(0, len(self.ships)):
             if self.ships[i].is_anchor == True:
-                if self.currentanchor.check_range(self.currentprimary) > self.engagementrange:
+                if self.currentprimary == None:
+                    print("No Primary selected!")
+                elif self.currentanchor.check_range(self.currentprimary) > self.engagementrange:
                     self.currentanchor.move_ship_to(self.currentprimary)
                 continue
             if self.ships[i].calc_distance(self.currentanchor) > self.anchordistance:
@@ -159,13 +161,13 @@ class fleet():
 
         for s in self.ships:
             if s.current_target == None:
-                print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
+                print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
                 s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
                 s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity))
-                listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
+                listy.append(("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
                 s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
                 s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity)))
             else:
-                print("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
+                print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
                 listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)))
         return listy
