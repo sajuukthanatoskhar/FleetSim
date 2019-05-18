@@ -4,6 +4,16 @@ import codecs
 import random
 import sys
 import os
+
+
+def noanchor():
+    pass
+
+
+def noprimary():
+    pass
+
+
 if __name__=="__main__":
     hostip= "127.0.0.1"
     hostport = random.randint(6700,10000)
@@ -57,17 +67,20 @@ if __name__=="__main__":
         print(data.decode("utf-8"))
         data = "0"
         while(data!= "ENDGAME"):
-            data, addr = playerlistenerclient.recvfrom(1024)
-            print(data.decode("utf-8"))
-            data = str(data.decode("utf-8")).split(":")
+            originaldata, addr = playerlistenerclient.recvfrom(1024)
+            print(originaldata.decode("utf-8"))
+            data = str(originaldata.decode("utf-8")).split(":")
             if data[0] == "End":
                 print("End")
             if data[0] == "NoAnchor":
                 print("NoAnchor")
+                noanchor()
             if data[0] == "NoPrimary":
                 print("NoPrimary")
+                noprimary()
             if data[0] == "Status Update":
-                print("Status Update")
+                #print("Status Update")
+                print(originaldata)
             if data[0] == "StatusCap":
                 print("Status Update")                
             responsecmd = input("Send p to continue $ ")

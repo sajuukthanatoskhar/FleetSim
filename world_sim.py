@@ -102,7 +102,7 @@ class world():
 
         if state == 2:
             statechoice = -1
-            while(statechoice == -1):
+            while(statechoice == -1): #Printing out each player, IP and fleets
                 print("%-30s %-20s %-50s" % ("Player Name","Address","Owned Fleets\n"))
                 for i in range(0,len(self.playersplaying)):
                     ownedshipslist = ""
