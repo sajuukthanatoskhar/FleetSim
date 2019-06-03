@@ -43,7 +43,12 @@ class fleet():
                 del i
 
 
-
+    def listallfleetmembers(self):
+        fleetmembers = ""
+        count = 0
+        for i in self.ships:
+            fleetmembers += "%s %s %s %s %s %s\n"(str(count),str(i.name),str(i.hp),str(i.loc.x),str(i.loc.y),str(i.loc.z))
+        return fleetmembers
 
     def range_from_anchor(self,ship):
         ship.calc_distance(self.currentanchor)

@@ -44,7 +44,7 @@ if __name__=="__main__":
         data, addr = playerlistenerclient.recvfrom(1024)
         choice = input(data.decode('utf-8'))
         playerclient_toserver.sendto(choice.encode("utf-8"), (hostip, clientport))
-        if int(choice == -2):
+        if int(int(choice) == -2):
             break
 
     choice = -1
@@ -70,14 +70,15 @@ if __name__=="__main__":
             originaldata, addr = playerlistenerclient.recvfrom(1024)
             print(originaldata.decode("utf-8"))
             data = str(originaldata.decode("utf-8")).split(":")
+            print("Total: %d\nActual String:%s"% (len(data),data))
             if data[0] == "End":
                 print("End")
             if data[0] == "NoAnchor":
                 print("NoAnchor")
-                noanchor()
+                noanchor(data)
             if data[0] == "NoPrimary":
                 print("NoPrimary")
-                noprimary()
+                noprimary(data)
             if data[0] == "Status Update":
                 #print("Status Update")
                 print(originaldata)
