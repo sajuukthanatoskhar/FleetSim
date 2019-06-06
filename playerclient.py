@@ -6,12 +6,32 @@ import sys
 import os
 
 
-def noanchor():
-    pass
+def noanchor(data):
+    count = 0
+    choice = 0
+    newdata = data[1].split('\n')
+    while(choice != -1):
+        for i in range(1,len(newdata)-1):
+            count += 1
+            print("%s %s"% (count,newdata[i]))
+        choice = input("What is your next primary? $ ")
 
 
-def noprimary():
-    pass
+def noprimary(data):
+    count = 0
+    choice = -1
+    newdata = data[1].split('\n')
+    while(choice == -1):
+        for i in range(1,len(newdata)-1):
+            count += 1
+            print("%s %s"% (count,newdata[i]))
+        choice = input("What is your next primary? $ ")
+        if choice >= 1 and choice <= len(newdata)-1:
+            print("Primary chosen - %s"% newdata[choice])
+            break
+        else:
+            choice = -1
+    return choice
 
 
 if __name__=="__main__":
@@ -48,13 +68,13 @@ if __name__=="__main__":
             break
 
     choice = -1
-    while (choice != -2):
-        print("Second Phase - Waiting")
-        data,addr = playerlistenerclient.recvfrom(1024)
-        if int(data.decode('utf-8')) == -2:
-            break
-        else:
-            print("Error")
+    #while (choice != -2):
+    print("Second Phase - Waiting")
+    #    data,addr = playerlistenerclient.recvfrom(1024)
+        # if int(data.decode('utf-8')) == -2:
+        #     break
+        # else:
+        #     print("Error")
 
 
     player_capitulation_status = 0
@@ -67,7 +87,7 @@ if __name__=="__main__":
         print(data.decode("utf-8"))
         data = "0"
         while(data!= "ENDGAME"):
-            originaldata, addr = playerlistenerclient.recvfrom(1024)
+            originaldata, addr = playerlistenerclient.recvfrom(10000)
             print(originaldata.decode("utf-8"))
             data = str(originaldata.decode("utf-8")).split(":")
             print("Total: %d\nActual String:%s"% (len(data),data))
@@ -75,10 +95,10 @@ if __name__=="__main__":
                 print("End")
             if data[0] == "NoAnchor":
                 print("NoAnchor")
-                noanchor(data)
+                choice = noanchor(data)
             if data[0] == "NoPrimary":
                 print("NoPrimary")
-                noprimary(data)
+                choice = noprimary(data)
             if data[0] == "Status Update":
                 #print("Status Update")
                 print(originaldata)

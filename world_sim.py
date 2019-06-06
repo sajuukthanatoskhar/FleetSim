@@ -142,7 +142,7 @@ class world():
             #todo: we do battle ehre, all players should have their fleets at this point.   The word needs to set up a battle arena .
             #todo: need anchor for
             print("loaded players")
-            fletchoicenumber = input("Waiting on you not me! $ ")
+            #fletchoicenumber = input("Waiting on you not me! $ ")
             while (True):
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
@@ -420,7 +420,7 @@ class world():
             for singleplayerfleets in players.owned_fleets:
                 for individualships in singleplayerfleets.ships:
                     #print("%s %s %s %s %s" %(str(count), individualships.name,str(individualships.loc.x),str(individualships.loc.y),str(individualships.loc.z)))
-                    listofships += "%s %s %s %s %s %s\n" %(str(count), individualships.name, players.name, str(individualships.loc.x),str(individualships.loc.y),str(individualships.loc.z))
+                    listofships += "%s %s %s %s %s %s\n" %(str(count), individualships.name[:-1], players.name, str(individualships.loc.x),str(individualships.loc.y),str(individualships.loc.z))
         return listofships
 
 
@@ -488,7 +488,7 @@ if __name__=="__main__":
     printMMD()
     while(True):
 
-        menu_state = input("\n\nTEST Alliance Fleet Simulator \n1.\tMake fleet?\n2.\tBattlefleets?\n3.\tQuit\n\nMake your choice, Fleet Commander of Test... \n $ ")
+        menu_state = '2'#input("\n\nTEST Alliance Fleet Simulator \n1.\tMake fleet?\n2.\tBattlefleets?\n3.\tQuit\n\nMake your choice, Fleet Commander of Test... \n $ ")
         if menu_state == '1':
             main_world.buildfleet()
 
