@@ -12,7 +12,7 @@ class turret():
         self.turretsig = turretsig
         self.tracking = self.convert_wsa_rads(wsa)
     def convert_wsa_rads(self,wsa):
-        return wsa*self.turretsig/40000 #todo convert wsa to rads, but I am on a plane and can't check the formula RIP
+        return int(wsa)*self.turretsig/40000 #todo convert wsa to rads, but I am on a plane and can't check the formula RIP
 
     def fire_weapon(self):
         return self.dps
@@ -39,5 +39,7 @@ def parse_weapon(weapon):
     # shipspecs.append(input("Falloff of Turret"))
     # shipspecs.append(input("DPS of Turret"))
     # shipspecs.append(input("WSA of Turret"))
-    weapon = turret(int(optimal),int(falloff),int(dps),name,int(wsa),0)
+    weapon = turret(int(optimal),int(falloff),int(dps),name,int(wsa),40) #todo: you need to put tracking in
+    weapon.tracking = weapon.convert_wsa_rads(wsa)
     return weapon
+

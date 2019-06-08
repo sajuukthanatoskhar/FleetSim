@@ -16,8 +16,9 @@ class fleet():
         z = 0
         self.anchor_goto_loc = location(0,0,0)
         self.engagementrange = None
-        self.anchordistance = 0
+        self.anchordistance = 2000
         self.fleet_capitulation_status = 0
+        self.engagementrange = 1500 #place holder value todo: fix this please
 
     # def __init__(self,name,engagementdistance):
     #     self.__class__.fleets.append(weakref.proxy(self)) #all fleets are tracked because why not
@@ -77,7 +78,7 @@ class fleet():
                 elif self.currentanchor.check_range(self.currentprimary) > self.engagementrange:
                     self.currentanchor.move_ship_to(self.currentprimary)
                 continue
-            if self.ships[i].calc_distance(self.currentanchor) > self.anchordistance:
+            if self.ships[i].calc_distance(self.currentanchor) > self.anchordistance: #distance should be 5000
                 self.ships[i].move_ship_to(self.currentanchor)
                 not_everyone_anchored = True
         if not_everyone_anchored == True:
@@ -105,6 +106,11 @@ class fleet():
             self.currentanchor.move_ship_to(target)
         else:
             self.attack(target)
+
+    def attack_primary(self):
+        for ships in self.ships:
+            ships.current_target = self.currentprimary
+            ships.main_attack_procedure(self.currentprimary)
 
     def attack_other_fleet(self,fleet,method):
         if method == "Basic Anchor and attack":
@@ -167,12 +173,12 @@ class fleet():
         for s in self.ships:
             if s.current_target == None:
                 print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
-                s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
+                s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
                 s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity))
                 listy.append(("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
-                s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
+                s.name, self.name[:-1], s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
                 s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity)))
             else:
-                print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
+                print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
                 listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)))
         return listy

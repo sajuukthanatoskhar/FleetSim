@@ -182,7 +182,7 @@ class ship:
 
 
 
-    def main_attack_procedure(self,target,fleet):
+    def main_attack_procedure(self,target):
         self.distance_from_target = self.check_range(target)
         if debug == 1:
             print("Debug - main_attack_procedure\nRange of " + self.name + " to " + target.name + " :" + str(self.check_range(target)))

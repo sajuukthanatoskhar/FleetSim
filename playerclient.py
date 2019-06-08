@@ -26,8 +26,9 @@ def noprimary(data):
             count += 1
             print("%s %s"% (count,newdata[i]))
         choice = input("What is your next primary? $ ")
-        if choice >= 1 and choice <= len(newdata)-1:
-            print("Primary chosen - %s"% newdata[choice])
+        if int(choice) >= 1 and int(choice) <= len(newdata)-1:
+            print("Primary chosen - %s" % newdata[int(choice)])
+            choice = newdata[int(choice)].split(" ")[6]  #we return the hex address of the objects
             break
         else:
             choice = -1
@@ -90,15 +91,17 @@ if __name__=="__main__":
             originaldata, addr = playerlistenerclient.recvfrom(10000)
             print(originaldata.decode("utf-8"))
             data = str(originaldata.decode("utf-8")).split(":")
-            print("Total: %d\nActual String:%s"% (len(data),data))
+            print("Total: %d Actual String:%s"% (len(data),data))
             if data[0] == "End":
                 print("End")
             if data[0] == "NoAnchor":
                 print("NoAnchor")
                 choice = noanchor(data)
+                playerclient_toserver.sendto(choice.encode("utf-8"), (hostip, clientport))
             if data[0] == "NoPrimary":
                 print("NoPrimary")
                 choice = noprimary(data)
+                playerclient_toserver.sendto(choice.encode("utf-8"), (hostip, clientport))
             if data[0] == "Status Update":
                 #print("Status Update")
                 print(originaldata)

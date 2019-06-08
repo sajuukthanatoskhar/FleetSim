@@ -129,9 +129,9 @@ class world():
             for players in self.playersplaying:
                 for singleplayerfleets in players.owned_fleets:
                     for shippyships in singleplayerfleets.ships: #I can't remember if there is a naming conflict for any of these
-                        shippyships.loc.x = 100*math.cos(3.14*count/len(self.playersplaying)) + random.randint(-3,3)
-                        shippyships.loc.y = 0 + random.randint(-3,3)
-                        shippyships.loc.z = 0 + random.randint(-3,3)
+                        shippyships.loc.x = 100000*math.cos(3.14*count/len(self.playersplaying)) + random.randint(-3,3)
+                        shippyships.loc.y = 0 + 2500*random.randint(-6,6)
+                        shippyships.loc.z = 0 + 2500*random.randint(-6,6)
                     self.setanchorforplayer_fleet(players,singleplayerfleets)
                     singleplayerfleets.printstats()
                 count += 1
@@ -142,6 +142,9 @@ class world():
             #todo: we do battle ehre, all players should have their fleets at this point.   The word needs to set up a battle arena .
             #todo: need anchor for
             print("loaded players")
+            plt.ion()
+            fig = plt.figure(figsize=(12, 8))
+            ax = fig.add_subplot(111, projection='3d')
             #fletchoicenumber = input("Waiting on you not me! $ ")
             while (True):
                 for players in self.playersplaying:
@@ -150,16 +153,22 @@ class world():
                             if singleplayerfleets.currentprimary == None or singleplayerfleets.currentanchor == None:
                                 if singleplayerfleets.currentanchor == None:
                                     message = "NoAnchor:%s Anchor - None\n%s" % (singleplayerfleets.name,singleplayerfleets.listallfleetmembers())
-                                    self.listenersock.sendto(message.encode("utf-8"),
-                                                             (players.address, int(players.port)))
+                                    self.listenersock.sendto(message.encode("utf-8"),(players.address, int(players.port)))
                                     self.message_to_all_players("Pausing Game for Anchor Change")
                                     data, addr = self.serversock.recvfrom(1024)
                                 if singleplayerfleets.currentprimary == None:
                                     message = "NoPrimary:%s Primary - None\n%s" % (singleplayerfleets.name,self.listofvalidprimaries())
                                     self.listenersock.sendto(message.encode("utf-8"), (players.address, int(players.port)))
-                                    self.message_to_all_players("Pausing Game for Primary Change")
+                                    self.message_to_all_players("Pausing Game for Primary Change for %s"% players)
                                     data, addr = self.serversock.recvfrom(1024)
+                                    while data.decode() == 'p': #todo: check for hex address
+                                        data, addr = self.serversock.recvfrom(1024)
+                                    print("%s"%data)
+                                    singleplayerfleets.currentprimary = findshipbymemaddress(singleplayerfleets,data.decode())
+                                    singleplayerfleets.currentanchor.current_target = singleplayerfleets.currentprimary
+                                    #singleplayerfleets.currentprimary =
                                     #data, address = self.serversock.recvfrom(1024)
+
 
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
@@ -175,7 +184,7 @@ class world():
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
                         if singleplayerfleets.fleet_capitulation_status == 0:
-                            pass
+                            singleplayerfleets.attack_primary()
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
                 #For loop for checking dead ships #todo: check code
@@ -199,22 +208,26 @@ class world():
                                 self.listenersock.sendto(listy[i].encode('UTF-8'), (players.address, int(players.port)))
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+
                 for players in self.playersplaying:
-                    plt.ion()
-                    fig = plt.figure(figsize=(12, 8))
-                    ax = fig.add_subplot(111, projection='3d')
                     for singleplayerfleets in players.owned_fleets:
                         for shipd in singleplayerfleets.ships:
                             ax.scatter(shipd.loc.x, shipd.loc.y, shipd.loc.z, c='r', marker='o')
-                for players in self.playersplaying:
-                    self.listenersock.sendto("End:Send p to continue".encode('UTF-8'), (players.address, int(players.port)))
-                    data, addr = self.serversock.recvfrom(1024)
+
+                plt.pause(0.1)
+                plt.cla()
+                plt.draw()
+
+
+                # for players in self.playersplaying:
+                #     self.listenersock.sendto("End:Send p to continue".encode('UTF-8'), (players.address, int(players.port)))
+                #     data, addr = self.serversock.recvfrom(1024)
 
 
 
 
                 #todo: do things
-                print("loaded Fleets, awaiting battle")
+                # print("loaded Fleets, awaiting battle")
         '''
         #todo:eed to fill in the following
         allow players to set anchors
@@ -412,6 +425,9 @@ class world():
         for playerstobemessage in self.playersplaying:
             self.listenersock.sendto(setanchormsg.encode("utf-8"), (playerstobemessage.address, int(playerstobemessage.port)))
 
+
+#We list the ships and the ship object addresses, because Sajuuk couldn't think of a quicker way to deal with unique ids.
+    #Bare in mind, that there is a list of all ships in the world.  This list is not updated ever.
     def listofvalidprimaries(self):
         #we want player,distance,shiptype
         count = 0
@@ -420,7 +436,7 @@ class world():
             for singleplayerfleets in players.owned_fleets:
                 for individualships in singleplayerfleets.ships:
                     #print("%s %s %s %s %s" %(str(count), individualships.name,str(individualships.loc.x),str(individualships.loc.y),str(individualships.loc.z)))
-                    listofships += "%s %s %s %s %s %s\n" %(str(count), individualships.name[:-1], players.name, str(individualships.loc.x),str(individualships.loc.y),str(individualships.loc.z))
+                    listofships += "%s %s %s %s %s %s %s\n" %(str(count), individualships.name[:-1], players.name, str(individualships.loc.x),str(individualships.loc.y),str(individualships.loc.z),str(hex(id(individualships))))
         return listofships
 
 
@@ -468,7 +484,11 @@ def printMMD():
                     omyNMMMMMmhmMMMMMMMMMNdhh.   :dhhhhhh+y/ +MMMMMMMMy:N.\n\
                    .hooyddddddyoydddddddddds+/  .yyyyyyyys:h/hddddddddd-ss\n\
                     °   °°°°°°°  °°°°°°°°°°° °              °°°°°°°°°°°  °                          ")
-
+def findshipbymemaddress(singleplayerfleets,data):
+    for fleets in singleplayerfleets.fleets:
+        for ships in fleets.ships:
+            if data == hex(id(ships)):
+                return ships
 
 if __name__=="__main__":
     main_world = world(2)
