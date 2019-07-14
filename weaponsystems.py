@@ -39,7 +39,8 @@ def parse_weapon(weapon):
     # shipspecs.append(input("Falloff of Turret"))
     # shipspecs.append(input("DPS of Turret"))
     # shipspecs.append(input("WSA of Turret"))
-    weapon = turret(int(optimal),int(falloff),int(dps),name,int(wsa),40) #todo: you need to put tracking in
+    weapon = turret(int(optimal),int(falloff),int(dps),name,int(wsa),40)
+    print("Weapon optimal+falloff %s + %s"%(weapon.optimal,weapon.falloff))
     weapon.tracking = weapon.convert_wsa_rads(wsa)
     return weapon
 

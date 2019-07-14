@@ -87,7 +87,9 @@ class ship:
         if self.check_range(target) <= self.targettingrange: #todo: the self.range should be refactored as the targetting range AND NOT worded as if it is a turret range and falloff, that is simply wrong
             lower,upper,avg = self.calc_weapon_avg_dps_mod(target,test_value)
             target.hp -= self.weapon.dps*avg #todo: the dps should not sit at this average - it needs to modified based on the number received from the tohit
+            print("\nDPS - %d from %s "%(math.floor(self.weapon.dps*avg),self.name))
             self.damagedealt_this_tick = math.floor(self.weapon.dps*avg)
+
 
         if target.hp <=0:
             print("*************%s destroyed **********************" % target.name)
@@ -160,7 +162,7 @@ class ship:
         return self.weapon.tracking
 
     def calc_weapon_to_hit_chance(self,target):
-        chance = 0.5**((self.calculate_angular(target)*40000/(self.calc_tracking_score()*target.signature)**2 + (max(0,(self.calc_distance(target)-self.weapon.optimal))/self.weapon.falloff)**2))
+        chance = 0.5**((self.calculate_angular(target)/(self.calc_tracking_score()*target.signature)**2 + (max(0,(self.calc_distance(target)-self.weapon.optimal))/self.weapon.falloff)**2))
         #chance = 0.5
         testedvalue= random.random()
         return chance,testedvalue
@@ -187,6 +189,7 @@ class ship:
         if debug == 1:
             print("Debug - main_attack_procedure\nRange of " + self.name + " to " + target.name + " :" + str(self.check_range(target)))
         if self.check_range(target) > self.targettingrange:
+            print("Target Distance %s, ship target range %s"%(str(self.check_range(target)),str(self.targettingrange)))
             #fleet.currentanchor.move_ship_to(target) #todo: is this ok?  Like what is going on here.  Is the anchor actually moving #[number of fleetmembers]# times
             #No, there is no movement, this is strictly an attack protocol.  Wtf, who coded this?  Oh it was me, Sajuuk
             self.damagedealt_this_tick = 0
@@ -224,6 +227,7 @@ def printstatsheader():
     #print("%30s %s\t%s\t%\t%s"%("Ship Name","Ship HP","X","Y","Z"))
     print("\n%-30s %-10s %-10s %-5s %-5s %-5s %-10s %-25s %-20s %-15s %-25s" % ("Ship Name","Fleet","Ship HP","X","Y","Z","Is Anchor","Target","Distance", "Damage Dealt","Angular Velocity"))
     return ("\n%-30s %-10s %-10s %-5s %-5s %-5s %-10s %-25s %-20s %-15s %-25s" % ("Ship Name","Fleet","Ship HP","X","Y","Z","Is Anchor","Target","Distance", "Damage Dealt","Angular Velocity"))
+
 if __name__=="__main__":
     UDP_port_no = 6789
     Sender_Port_No = 6790

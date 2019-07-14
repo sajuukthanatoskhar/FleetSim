@@ -133,7 +133,7 @@ class world():
                         shippyships.loc.y = 0 + 2500*random.randint(-6,6)
                         shippyships.loc.z = 0 + 2500*random.randint(-6,6)
                     self.setanchorforplayer_fleet(players,singleplayerfleets)
-                    singleplayerfleets.printstats()
+                    #singleplayerfleets.printstats()
                 count += 1
                 print(count)
 
@@ -187,6 +187,22 @@ class world():
                             singleplayerfleets.attack_primary()
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+                # For loop for printing fleet ships #todo: check code
+                for players in self.playersplaying:
+                    line = printstatsheader()
+                    for singleplayerfleets in players.owned_fleets:
+                        if singleplayerfleets.fleet_capitulation_status == 0:
+                            for i in singleplayerfleets.ships:
+                                if i.damagedealt_this_tick > 0:
+                                    pass
+                                    #print("Damage: %d for %s"%(int(i.damagedealt_this_tick),str(i.name)))
+
+                            self.listenersock.sendto(line.encode('UTF-8'), (players.address, int(players.port)))
+                            listy = singleplayerfleets.printstats()
+                            for i in range(0, len(listy)):
+                                self.listenersock.sendto(listy[i].encode('UTF-8'), (players.address, int(players.port)))
+                        elif singleplayerfleets.fleet_capitulation_status == 1:
+                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
                 #For loop for checking dead ships #todo: check code
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
@@ -196,18 +212,7 @@ class world():
                                 processing_dead = singleplayerfleets.checkenemyfleetdead(singleplayerfleets)
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
-                # For loop for printing fleet ships #todo: check code
-                for players in self.playersplaying:
-                    for singleplayerfleets in players.owned_fleets:
-                        if singleplayerfleets.fleet_capitulation_status == 0:
 
-                            line = printstatsheader()
-                            self.listenersock.sendto(line.encode('UTF-8'), (players.address, int(players.port)))
-                            listy = singleplayerfleets.printstats()
-                            for i in range(0, len(listy)):
-                                self.listenersock.sendto(listy[i].encode('UTF-8'), (players.address, int(players.port)))
-                        elif singleplayerfleets.fleet_capitulation_status == 1:
-                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
 
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:

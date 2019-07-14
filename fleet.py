@@ -16,9 +16,9 @@ class fleet():
         z = 0
         self.anchor_goto_loc = location(0,0,0)
         self.engagementrange = None
-        self.anchordistance = 2000
+        self.anchordistance = 2000 #place holder value todo: anchordistance range should be settable by user
         self.fleet_capitulation_status = 0
-        self.engagementrange = 1500 #place holder value todo: fix this please
+        self.engagementrange = 7500 #place holder value todo: engagement range should be settable by user
 
     # def __init__(self,name,engagementdistance):
     #     self.__class__.fleets.append(weakref.proxy(self)) #all fleets are tracked because why not
@@ -162,6 +162,7 @@ class fleet():
             if fleet.ships[i].hp <= 0:
                 if fleet.currentanchor == fleet.ships[i]:
                     fleet.choosenewanchor()
+                print("%s Ship Deleted"%str(fleet.ships[i].name[:-1]))
                 del fleet.ships[i]
                 return 1
         return 0
@@ -179,6 +180,6 @@ class fleet():
                 s.name, self.name[:-1], s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
                 s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity)))
             else:
-                print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity))
-                listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name, self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)))
+                print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name[:-1],s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)) #[:-1] is for the names.... why do these have /n's? why why why
+                listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target[:-1],s.damagedealt_this_tick,s.angular_velocity)))
         return listy
