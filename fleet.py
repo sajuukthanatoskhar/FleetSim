@@ -1,5 +1,8 @@
 import weakref
 from ship import *
+import Pyro4
+
+@Pyro4.expose
 class fleet():
     fleets = []
 

@@ -6,7 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from mpl_toolkits.mplot3d import Axes3D
+import Pyro4
+import threading
 
+
+@Pyro4.expose
 class world():
     def __init__(self,numplayers):
         self.UDP_port_no = 6789
@@ -24,10 +28,19 @@ class world():
         self.ships = []
         self.playersplaying = []
         self.fleet_capitulation_status = 0 #0 is still active fleet, 1 is dead fleet
+
+
+
+
+
     '''All fleets will move/anchor '''
     def anchor_movephase(self):
         for i in range(0,len(self.fleets)):
             i.anchorup()
+
+
+
+
 
     '''Process all fleets attacking'''
     def attack_phase(self):
@@ -495,6 +508,10 @@ def findshipbymemaddress(singleplayerfleets,data):
             if data == hex(id(ships)):
                 return ships
 
+
+def start_nameserver(mainworldobject):
+    Pyro4.Daemon.serveSimple({mainworldobject: "mainserver"}, ns=True,)
+
 if __name__=="__main__":
     main_world = world(2)
 
@@ -506,14 +523,17 @@ if __name__=="__main__":
     #     FleetRed.ships.append(ship(800,2,60,5,1,"Thanatos_"+str(i),random.randint(30,150),random.randint(30,150),20,FleetRed,small_autocannon))
     #     FleetBlue.ships.append(ship(500,2,70,2,1,"Nyx_" +str(i),50,150,20,FleetBlue,small_autocannon))
 
-
+    # nameserver = threading.Thread(target=start_nameserver(main_world))
+    # nameserver.daemon = True
+    # nameserver.start()
 
     state = 0
 
     printMMD()
     while(True):
 
-        menu_state = '2'#input("\n\nTEST Alliance Fleet Simulator \n1.\tMake fleet?\n2.\tBattlefleets?\n3.\tQuit\n\nMake your choice, Fleet Commander of Test... \n $ ")
+        #menu_state = '2'
+        menu_state = input("\n\nTEST Alliance Fleet Simulator \n1.\tMake fleet?\n2.\tBattlefleets?\n3.\tQuit\n\nMake your choice, Fleet Commander of Test... \n $ ")
         if menu_state == '1':
             main_world.buildfleet()
 

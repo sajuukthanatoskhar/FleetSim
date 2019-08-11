@@ -6,6 +6,7 @@ import sys
 import os
 
 
+
 def noanchor(data):
     count = 0
     choice = 0
@@ -26,12 +27,16 @@ def noprimary(data):
             count += 1
             print("%s %s"% (count,newdata[i]))
         choice = input("What is your next primary? $ ")
-        if int(choice) >= 1 and int(choice) <= len(newdata)-1:
-            print("Primary chosen - %s" % newdata[int(choice)])
-            choice = newdata[int(choice)].split(" ")[6]  #we return the hex address of the objects
-            break
-        else:
-            choice = -1
+        while(True):
+            try:
+                if int(choice) >= 1 and int(choice) <= len(newdata)-1:
+                    print("Primary chosen - %s" % newdata[int(choice)])
+                    choice = newdata[int(choice)].split(" ")[6]  #we return the hex address of the objects
+                    break
+                else:
+                    choice = -1
+            except ValueError as e:
+                print(e)
     return choice
 
 
