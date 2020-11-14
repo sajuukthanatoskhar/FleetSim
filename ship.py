@@ -67,6 +67,8 @@ class ship:
             self.is_logi = False
         self.__class__.instances.append(weakref.proxy(self))
 
+
+
     def check_range(self, target):
         x = self.loc.x - target.loc.x
         y = self.loc.y - target.loc.y
@@ -90,7 +92,7 @@ class ship:
             self.damagedealt_this_tick = math.floor(self.weapon.dps * avg)
 
         if target.hp <= 0:
-            print("*************%s destroyed **********************" % target.name)
+            print("*************%s destroyed **********************" % target)
 
     def calculate_location_3d_diff(self, target):
         x = self.loc.x - target.loc.x
@@ -261,6 +263,7 @@ if __name__ == "__main__":
     FleetBlue.choosenewanchor()
     FleetRed.fleet_choose_primary_now(FleetBlue, "closest")
     FleetBlue.fleet_choose_primary_now(FleetRed, "closest")
+    fleets = [FleetRed, FleetBlue]
     while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
         FleetRed.anchorup()
         FleetBlue.anchorup()
@@ -270,6 +273,13 @@ if __name__ == "__main__":
         FleetBlue.attack_other_fleet(FleetRed, "Basic Anchor and attack")
 
         processing_dead = 1
+        #todo:
+        '''
+        for fleet in fleets:
+            
+        
+        '''
+
         while (processing_dead):
             processing_dead = FleetRed.checkenemyfleetdead(FleetBlue)
 

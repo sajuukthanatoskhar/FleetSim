@@ -114,6 +114,9 @@ class fleet():
         for ships in self.ships:
             ships.current_target = self.currentprimary
             ships.main_attack_procedure(self.currentprimary)
+        if self.currentprimary.hp < 0:
+            self.currentprimary = None
+
 
     def attack_other_fleet(self,fleet,method):
         if method == "Basic Anchor and attack":
@@ -124,7 +127,7 @@ class fleet():
 
 
 
-            if self.currentprimary.hp >0:
+            if self.currentprimary.hp > 0:
                 self.currenttargetstatus = 1
                 #attack if in range
                 for i in range(0,len(self.ships)):
@@ -184,5 +187,5 @@ class fleet():
                 s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity)))
             else:
                 print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name[:-1],s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)) #[:-1] is for the names.... why do these have /n's? why why why
-                listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target[:-1],s.damagedealt_this_tick,s.angular_velocity)))
+                listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor,s.current_target.name,s.distance_from_target,s.damagedealt_this_tick,s.angular_velocity)))
         return listy

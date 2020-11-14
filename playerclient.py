@@ -112,7 +112,7 @@ if __name__=="__main__":
                 print(originaldata)
             if data[0] == "StatusCap":
                 print("Status Update")                
-            responsecmd = input("Send p to continue $ ")
+            responsecmd = 'p'
             playerclient_toserver.sendto(responsecmd.encode("utf-8"), (hostip, clientport))
 
 

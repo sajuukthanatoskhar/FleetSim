@@ -24,6 +24,7 @@ class TestTurret(TestCase):
         assert redship.calc_distance(blueship) <= redship.weapon.optimal
     def calc_weap_dps(self):
         redship.attack(blueship)
+        
     def test_guns(self):
         #need to do a fuckton fo tests
         #distance vs success vs damage
