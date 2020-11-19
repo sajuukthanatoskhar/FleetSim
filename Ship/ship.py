@@ -2,7 +2,7 @@
 import json
 import sys
 import UDP_Server_Client.Server_Client
-from fleet import *
+import fleet
 import numpy as np
 import weakref
 import random
@@ -13,6 +13,8 @@ import Pyro4
 import weaponsystems
 import math
 from time import sleep
+import Ship.capacitor
+import Ship.ship_health
 
 debug = 0
 import socket
@@ -44,7 +46,11 @@ class location:
 class ship:
     instances = []
 
-    def __init__(self, hitpoints, damage, targettingrange, speed, inertia, name, x, y, z, fleet, weapons):
+    def __init__(self, hitpoints, damage, targettingrange, speed, inertia, name, x, y, z,
+                 fleet, weapons, capacitor: Ship.capacitor.capacitor,
+                 shield: Ship.ship_health.Shield,
+                 armor: Ship.ship_health.Armor,
+                 hull: Ship.ship_health.Hull):
         self.hp = hitpoints
         self.dps = damage
         self.targettingrange = targettingrange
@@ -57,7 +63,12 @@ class ship:
         self.current_target = None
         self.damagedealt_this_tick = None
         self.distance_from_target = None
+        self.drone_bay = None
         self.angular_velocity = None  # angular velocity of current target
+        self.ship_shield = shield
+        self.ship_armor = armor
+        self.ship_hull = hull
+        self.ship_capacitor = capacitor
         if fleet != None:
             self.fleet = fleet
 
@@ -66,7 +77,6 @@ class ship:
         else:
             self.is_logi = False
         self.__class__.instances.append(weakref.proxy(self))
-
 
 
     def check_range(self, target):
@@ -237,8 +247,8 @@ if __name__ == "__main__":
     Sender_Port_No = 6790
     UDP_IP_Address = "127.0.0.1"
     small_autocannon = weaponsystems.turret(100, 80, 90, "Small Autocannon", 8)
-    FleetRed = fleet("Red", 40)
-    FleetBlue = fleet("Blue", 50)
+    FleetRed = fleet.Fleet("Red")
+    FleetBlue = fleet.Fleet("Blue")
     serversock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     serversock.bind(("", UDP_port_no))
     remoteip = "192.168.178.22"

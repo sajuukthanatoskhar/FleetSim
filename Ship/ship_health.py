@@ -21,9 +21,12 @@ class damage_types:
     def get_Explosive(self):
         return self.damage_component[3]
 
-status = {'fully_healed': 2,
-          'depleted': 1,
-          'damaged': 0}
+status = {
+    'fully_healed': 0,
+    'depleted': -2,
+    'damaged': -1
+}
+
 
 class HP_Object:
     def __init__(self, hp: int, resistance: list):

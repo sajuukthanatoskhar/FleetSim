@@ -1,7 +1,3 @@
-import ship
-import numpy as np
-
-
 class turret():
     def __init__(self, optimal, falloff, dps, name,wsa,turretsig):
         self.optimal = optimal

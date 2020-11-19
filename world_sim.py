@@ -1,3 +1,5 @@
+import math
+
 from fleet import *
 import socket
 from players import *
@@ -8,7 +10,8 @@ import random
 from mpl_toolkits.mplot3d import Axes3D
 import Pyro4
 import threading
-
+import os
+import Ship.ship
 
 @Pyro4.expose
 class world():
@@ -202,7 +205,7 @@ class world():
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
                 # For loop for printing fleet ships #todo: check code
                 for players in self.playersplaying:
-                    line = printstatsheader()
+                    line = Ship.ship.printstatsheader()
                     for singleplayerfleets in players.owned_fleets:
                         if singleplayerfleets.fleet_capitulation_status == 0:
                             for i in singleplayerfleets.ships:
@@ -351,10 +354,11 @@ class world():
 
                 f.close
             if state == '2':
-                shipspecs = []
-                shipspecs.append(input("Name of - $ "))
+                shipspecs_dict = dict
+
+                shipspecs_dict["Name"] = (input("Name of - $ "))
                 shipspecs.append(input("Hitpoints of Ship $ "))
-                shipspecs.append(input("Targetting Range of Ship $ "))
+                shipspecs_dict["lock_range"] = input("Targetting Range of Ship $ ")
                 shipspecs.append(input("Speed of Ship $ "))
                 shipspecs.append(input("Inertia of Ship $ "))
                 shipspecs.append(input("Signature of Ship $ "))
