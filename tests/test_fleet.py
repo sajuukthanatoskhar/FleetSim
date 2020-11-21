@@ -54,7 +54,7 @@ def test_remove_ship(make_fleet):
     assert len(tested_fleet.ships) == 0, "Error: Should not have any ships in the ships list of fleet"
 
 
-def test_listallfleetmembers():
+def test_listallfleetmembers(make_fleet):
     errors = []
     tested_fleet = make_fleet
     tested_fleet.ships = []

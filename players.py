@@ -35,9 +35,20 @@ class players():
 
     def parse_ship_and_into_fleet(self, new_fleet, parsed_fleet):
         from Ship import ship
+        import Ship.capacitor
+        import Ship.ship_health
+
         shipfile = open(parsed_fleet[0].replace('.fleet', '.ship'), 'r')
         shiplines = shipfile.readlines()
-        name, hitpoints, targettingrange, speed, inertia, signature, weapon, capacitor, shield, armor, hull = map(str, shiplines)
+        for i in range(len(shiplines)):
+            shiplines[i] = shiplines[i].rstrip('\n')
+
+
+        shield = Ship.ship_health.Shield(250, [50, 45, 40, 35], 0.1, 100)
+        armor = Ship.ship_health.Armor(500, [30, 25, 20, 15])
+        hull = Ship.ship_health.Hull(1000, [80, 75, 70, 65])
+        capacitor = Ship.capacitor.capacitor(1000, 100, 0.2)
+        name, hitpoints, targettingrange, speed, inertia, signature, weapon = map(str, shiplines)
         parsed_weapon = weaponsystems.parse_weapon(weapon)
         ship = ship.ship(int(hitpoints), 50, int(targettingrange), int(speed), int(inertia), name, 0, 0, 0, new_fleet,
                          parsed_weapon, capacitor, shield, armor, hull)
