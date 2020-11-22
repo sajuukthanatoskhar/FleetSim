@@ -2,14 +2,14 @@ import math
 from Ship.ship_health import status
 
 class capacitor:
-    def __init__(self, capacitor_capacity, time_to_recharge, neut_resistance: float):
-        self.capacitor_level = capacitor_capacity
-        self.max_capacitor = capacitor_capacity
-        self.recharge_time = time_to_recharge
-        if neut_resistance > 1:
+    def __init__(self, cap_dict):
+        self.capacitor_level = cap_dict["capacitor_capacity"]
+        self.max_capacitor = cap_dict["max_capacitor"]
+        self.recharge_time = cap_dict["time_to_recharge"]
+        if cap_dict["neut_resistance"] > 1 or cap_dict["neut_resistance"] < 0:
             raise Exception("Energy Neutralizer must be between 0 and 1 in decimal")
         else:
-            self.neut_res = neut_resistance
+            self.neut_res = cap_dict["neut_resistance"]
 
     def recharge_tick(self):
         capacitor_cap_ratio = (self.capacitor_level / self.max_capacitor)

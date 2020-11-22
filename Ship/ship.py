@@ -46,29 +46,27 @@ class location:
 class ship:
     instances = []
 
-    def __init__(self, hitpoints, damage, targettingrange, speed, inertia, name, x, y, z,
-                 fleet, weapons, capacitor: Ship.capacitor.capacitor,
-                 shield: Ship.ship_health.Shield,
-                 armor: Ship.ship_health.Armor,
-                 hull: Ship.ship_health.Hull):
-        self.hp = hitpoints
-        self.dps = damage
-        self.targettingrange = targettingrange
-        self.speed = speed
-        self.inertia = inertia
-        self.name = name
-        self.loc = location(x, y, z)
-        self.weapon = weapons
-        self.signature = 50
+    def __init__(self, ship_dict):
+        self.hp = ship_dict['hitpoints']
+        self.dps = ship_dict['damage']
+        self.targettingrange = ship_dict['targettingrange']
+        self.speed = ship_dict['speed']
+        self.inertia = ship_dict['inertia']
+        self.name = ship_dict['name']
+        self.loc = location(ship_dict['x'],
+                            ship_dict['y'],
+                            ship_dict['z'])
+        self.weapon = ship_dict['weapons']
+        self.signature = ship_dict['signature']
         self.current_target = None
         self.damagedealt_this_tick = None
         self.distance_from_target = None
         self.drone_bay = None
         self.angular_velocity = None  # angular velocity of current target
-        self.ship_shield = shield
-        self.ship_armor = armor
-        self.ship_hull = hull
-        self.ship_capacitor = capacitor
+        self.ship_shield = Ship.ship_health.Shield(ship_dict['shield'])
+        self.ship_armor = Ship.ship_health.Armor(ship_dict['armor'])
+        self.ship_hull = Ship.ship_health.Hull(ship_dict['hull'])
+        self.ship_capacitor = Ship.capacitor.capacitor(ship_dict['capacitor'])
         if fleet != None:
             self.fleet = fleet
 
@@ -259,21 +257,21 @@ if __name__ == "__main__":
 
     # FleetRed.add_ship_to_fleet(ship1)
     # FleetBlue.add_ship_to_fleet(ship2)
-    for i in range(0, 10, 1):
-        FleetRed.ships.append(
-            ship(800, 2, 60, 5, 1, "Thanatos_" + str(i), random.randint(30, 150), random.randint(30, 150), 20, FleetRed,
-                 small_autocannon))
-        FleetBlue.ships.append(ship(500, 2, 70, 2, 1, "Nyx_" + str(i), 50, 150, 20, FleetBlue, small_autocannon))
+    # for i in range(0, 10, 1):
+    #     FleetRed.ships.append(
+ #           ship(800, 2, 60, 5, 1, "Thanatos_" + str(i), random.randint(30, 150), random.randint(30, 150), 20, FleetRed,
+  #               small_autocannon))
+#        FleetBlue.ships.append(ship(500, 2, 70, 2, 1, "Nyx_" + str(i), 50, 150, 20, FleetBlue, small_autocannon))
     # while ship2.hp > 0 and ship1.hp > 0:
 
     # ship1.main_attack_procedure(ship2)
     # ship2.evasive_attack_procedure(ship1,30)
-    FleetRed.ships.append(ship(40, 10, 10, 5, 1, "Shitty Pilot #1", 100, 100, 20, FleetRed, small_autocannon))
-    FleetRed.choosenewanchor()
-    FleetBlue.choosenewanchor()
-    FleetRed.fleet_choose_primary_now(FleetBlue, "closest")
-    FleetBlue.fleet_choose_primary_now(FleetRed, "closest")
-    fleets = [FleetRed, FleetBlue]
+#    FleetRed.ships.append(ship(40, 10, 10, 5, 1, "Shitty Pilot #1", 100, 100, 20, FleetRed, small_autocannon))
+#     FleetRed.choosenewanchor()
+#     FleetBlue.choosenewanchor()
+#     FleetRed.fleet_choose_primary_now(FleetBlue, "closest")
+#     FleetBlue.fleet_choose_primary_now(FleetRed, "closest")
+#     fleets = [FleetRed, FleetBlue]
     while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
         FleetRed.anchorup()
         FleetBlue.anchorup()

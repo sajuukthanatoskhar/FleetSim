@@ -1,7 +1,14 @@
 from unittest import TestCase
 import Ship.ship_health as ship_health
 
-tested_ship_shield = ship_health.Shield(500, [25, 50, 75, 100], 0.1, recharge_time=10)
+shield_dict = {
+            "hp": 500,
+            "resistance": [25, 50, 75, 100],
+            "shield_leak": 0.1,
+            "recharge_time": 10
+}
+
+tested_ship_shield = ship_health.Shield(shield_dict)
 testing_weapon = ship_health.damage_types([100,100,100,100])
 
 class TestShield(TestCase):

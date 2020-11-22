@@ -4,14 +4,47 @@ import Ship.ship as ship
 import Ship.capacitor as capacitor
 import Ship.ship_health as shiphealth
 
-tested_ship = ship.ship(150, 150, 100000, 200, 1.5, "TestShip",
-                        0, 0, 0, None, "Small Autocannon.turret",
-                        capacitor.capacitor(2000, 200, 0.1),
-                        shiphealth.Shield(1000, [60, 40, 40, 20], 0.1, 100),
-                        shiphealth.Armor(1000, [50, 50, 25, 0]),
-                        shiphealth.Hull(500, [0, 0, 0, 0])
-                        )
+shipdict = {
+    "name": "TestShip",
+    "hitpoints": 150,
+    "damage": 150,
+    "targettingrange": 100000,
+    "speed": 200,
+    "inertia": 1.5,
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "weapons": "Small Autocannon.turret",
+    "signature": 50,
+    "capacitor":
+        {
+            "capacitor_capacity": 5000,
+            "max_capacitor": 4999,
+            "time_to_recharge": 250,
+            "neut_resistance": 0.5
+        },
+    "shield":
+        {
+            "hp": 1000,
+            "resistance": [60, 40, 40, 20],
+            "shield_leak": 0.1,
+            "recharge_time": 100
+        },
+    "armor":
+        {
+            "hp": 1000,
+            "resistance": [60, 40, 40, 20]
+        },
+    "hull":
+        {
+            "hp": 1000,
+            "resistance": [60, 40, 40, 20]
+        }
 
+
+}
+
+tested_ship = ship.ship(shipdict)
 
 @pytest.fixture
 def make_fleet():
@@ -36,7 +69,7 @@ def test_add_ship_to_fleet(make_fleet):
     if len(tested_fleet.ships) != 1:
         errors.append("Error: There should only be 1 ship in the fleet")
 
-    assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
+    assert not errors, "Errors occurred occurred: \n{}".format("\n".join(errors))
 
 
 def test_remove_ship(make_fleet):
@@ -64,82 +97,81 @@ def test_listallfleetmembers(make_fleet):
     tested_fleet.add_ship_to_fleet(tested_ship)
     tested_fleet.add_ship_to_fleet(tested_ship)
 
-
     assert len(tested_fleet.ships) == 5, "Error: There should be 5 ships in the fleet"
 
-
+@pytest.mark.skip
 def test_range_from_anchor():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_default_fleet_activity():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_set_anchor():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_anchor_move_to_target():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_anchorup():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_chooseprimary():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_fleet_choose_primary_now():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_fleet_attack_procedure():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_attack_primary():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_attack_other_fleet():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_choosenewanchor():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_checkenemyfleetdead():
     errors = []
 
     assert not errors, "Errors occurred occured: \n{}".format("\n".join(errors))
 
-
+@pytest.mark.skip
 def test_printstats():
     errors = []
 

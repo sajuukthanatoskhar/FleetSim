@@ -6,6 +6,7 @@ ship_dict = {
     "hitpoints": 500,
     "damage": 100,
     "targettingrange" : 100000,
+    "signature": 50,
     "speed" : 400,
     "inertia" : 1,
     "name": "Test_Ship",
@@ -15,6 +16,7 @@ ship_dict = {
     "fleet" : None,
     "weapons": None,
     "capacitor": {"capacitor_capacity": 5000,
+                  "max_capacitor": 5000,
                   "time_to_recharge": 100,
                   "neut_resistance": 0.1},
     "shield": {"hp": 2500,
@@ -27,10 +29,10 @@ ship_dict = {
              "resistance": [75, 85, 50, 25]}
 }
 
-@pytest.mark.xfail(reason= "Should fail because the ship constructor needs to be changed")
+
 def test_make_ship():
     ship_to_be_tested = Ship.ship.ship(ship_dict)
-    assert ship_to_be_tested.isinstance(Ship.ship.ship)
+    assert isinstance(ship_to_be_tested, Ship.ship.ship)
 
 @pytest.mark.skip
 def test_check_range():

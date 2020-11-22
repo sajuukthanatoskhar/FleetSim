@@ -2,7 +2,14 @@ from unittest import TestCase
 
 import Ship.capacitor
 
-tested_capacitor = Ship.capacitor.capacitor(500, 10, 0.5)
+tested_capacitor_dict = {
+            "capacitor_capacity": 500,
+            "max_capacitor": 500,
+            "time_to_recharge": 10,
+            "neut_resistance": 0.5
+        }
+# 500, 10, 0.5)
+tested_capacitor = Ship.capacitor.capacitor(tested_capacitor_dict)
 
 class TestCapacitor(TestCase):
     def test_modify_capacitor(self):

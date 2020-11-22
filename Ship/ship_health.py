@@ -21,6 +21,7 @@ class damage_types:
     def get_Explosive(self):
         return self.damage_component[3]
 
+
 status = {
     'fully_healed': 0,
     'depleted': -2,
@@ -56,33 +57,33 @@ class HP_Object:
             return status['damaged']
 
     def be_attacked(self, damage: damage_types):
-        for damage_type,damage_res in zip(damage.damage_component ,self.resistance):
-            self.modify_hp(damage_type*(1-damage_res*0.01))
-
+        for damage_type, damage_res in zip(damage.damage_component, self.resistance):
+            self.modify_hp(damage_type * (1 - damage_res * 0.01))
 
 
 class Shield(HP_Object):
-    def __init__(self,  hp: int, resistance: list, shield_leak: float, recharge_time: int):
-        """
-        :rtype: None
-        """
-        super().__init__(hp, resistance)
-        self.shield_leak = shield_leak
-        self.recharge_time = recharge_time
+    def __init__(self, shield_dict):
+        super().__init__(shield_dict['hp'], shield_dict['resistance'])
+        self.shield_leak = shield_dict['shield_leak']
+        self.recharge_time = shield_dict['recharge_time']
 
     def recharge_tick(self) -> float:
         '''
         :return: https://wiki.eveuniversity.org/Tanking#Understand_Shield_Recharge_Rate
         '''
-        shield_cap_ratio = (self.hp/self.max_hp)
-        recharge_value = (10*self.max_hp/self.recharge_time) * (math.sqrt(shield_cap_ratio) - shield_cap_ratio ) # https://wiki.eveuniversity.org/Tanking#Understand_Shield_Recharge_Rate
+        shield_cap_ratio = (self.hp / self.max_hp)
+        recharge_value = (10 * self.max_hp / self.recharge_time) * (math.sqrt(
+            shield_cap_ratio) - shield_cap_ratio)  # https://wiki.eveuniversity.org/Tanking#Understand_Shield_Recharge_Rate
         return recharge_value
 
 
 class Armor(HP_Object):
-    def __init__(self, hp: int, resistance: list):
-        super().__init__(hp, resistance)
+    def __init__(self, armor_dict):
+        super().__init__(armor_dict['hp'],
+                         armor_dict['resistance'])
+
 
 class Hull(HP_Object):
-    def __init__(self, hp: int, resistance: list):
-        super().__init__(hp, resistance)
+    def __init__(self, hull_dict):
+        super().__init__(hull_dict['hp'],
+                         hull_dict['resistance'])
