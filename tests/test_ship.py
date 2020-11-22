@@ -27,10 +27,10 @@ ship_dict = {
              "resistance": [75, 85, 50, 25]}
 }
 
-@pytest.mark.xfail
+@pytest.mark.xfail(reason= "Should fail because the ship constructor needs to be changed")
 def test_make_ship():
     ship_to_be_tested = Ship.ship.ship(ship_dict)
-    assert True
+    assert ship_to_be_tested.isinstance(Ship.ship.ship)
 
 @pytest.mark.skip
 def test_check_range():
