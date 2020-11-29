@@ -41,5 +41,8 @@ class players():
         ship_dict = dict
         with open(parsed_fleet[0].replace('.fleet', '.ship'), 'r') as shipfile:
             ship_dict = json.load(shipfile)
-        ship = ship.ship(ship_dict)
+
+        ship_dict['weapons'] = weaponsystems.parse_weapon(ship_dict['weapons'])
+
+        ship = ship.ship(ship_dict)  # todo: problem
         return ship

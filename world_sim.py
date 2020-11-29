@@ -169,7 +169,9 @@ class world():
                             if singleplayerfleets.currentprimary == None or singleplayerfleets.currentanchor == None:
                                 if singleplayerfleets.currentanchor == None:
                                     message = "NoAnchor:%s Anchor - None\n%s" % (singleplayerfleets.name,singleplayerfleets.listallfleetmembers())
-                                    self.listenersock.sendto(message.encode("utf-8"),(players.address, int(players.port)))
+                                    self.listenersock.sendto(message.encode("utf-8"),
+                                                             (players.address, int(players.port)))
+
                                     self.message_to_all_players("Pausing Game for Anchor Change")
                                     data, addr = self.serversock.recvfrom(1024)
                                 if singleplayerfleets.currentprimary == None:
@@ -179,7 +181,7 @@ class world():
                                     data, addr = self.serversock.recvfrom(1024)
                                     while data.decode() == 'p': #todo: check for hex address
                                         data, addr = self.serversock.recvfrom(1024)
-                                    print("%s"%data)
+                                    print("%s"% data)
                                     singleplayerfleets.currentprimary = findshipbymemaddress(singleplayerfleets,data.decode())
                                     singleplayerfleets.currentanchor.current_target = singleplayerfleets.currentprimary
                                     #singleplayerfleets.currentprimary =
@@ -188,6 +190,7 @@ class world():
 
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+
                 # For loop for moving ships and anchors#todo: check code
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
@@ -196,6 +199,7 @@ class world():
                                 singleplayerfleets.anchorup()
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+
                 # For loop for attacking ships #todo: check code
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
@@ -203,6 +207,7 @@ class world():
                             singleplayerfleets.attack_primary()
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+
                 # For loop for printing fleet ships #todo: check code
                 for players in self.playersplaying:
                     line = Ship.ship.printstatsheader()
@@ -219,6 +224,7 @@ class world():
                                 self.listenersock.sendto(listy[i].encode('UTF-8'), (players.address, int(players.port)))
                         elif singleplayerfleets.fleet_capitulation_status == 1:
                             print("Status Update: Player %s: Fleet %s -- Fleet capitulated"% (players.name,singleplayerfleets.name))
+
                 #For loop for checking dead ships #todo: check code
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
@@ -293,6 +299,12 @@ class world():
     def update_fleet_information(self):
         pass
 
+    def make_new_ship_spec(self) -> dict:
+        ship_dict = dict
+        ship_dict["name"] = input("\nName of ship? $ ")
+        ship_dict['damage'] = input("\nDPS of Ship? $")
+        return ship_dict
+
     def buildfleet(self):
         state = -1
         while(True):
@@ -339,54 +351,18 @@ class world():
                                 else:
                                     print("Error")
 
+                with open(fleetname + ".fleet","w+") as f:
+                    f.write(str(fleetname))
 
-
-
-
-                f = open(fleetname + ".fleet","w+")
-                f.write(str(fleetname))
-
-                if len(shipsinfleet) == len(numshipsinfleet):
-                    f.write("\n" + str(len(shipsinfleet)))
-                    for i in range(0,len(shipsinfleet)):
-                        f.write("\n" + str(shipsinfleet[i]) + " " + str(numshipsinfleet[i]))
-
-
-                f.close
-            if state == '2':
-                shipspecs_dict = dict
-
-                shipspecs_dict["Name"] = (input("Name of - $ "))
-                shipspecs.append(input("Hitpoints of Ship $ "))
-                shipspecs_dict["lock_range"] = input("Targetting Range of Ship $ ")
-                shipspecs.append(input("Speed of Ship $ "))
-                shipspecs.append(input("Inertia of Ship $ "))
-                shipspecs.append(input("Signature of Ship $ "))
-                print("\nChoose Turret:")
-                turretlist = self.view("turret")
-                choice = -1
-                while(int(choice) <= -1 or int(choice) >= len(turretlist)-1):
-                    print("%20s\t%10s\t%10s\t%10s\t%10s" % ("Turret System Name", "Optimal Range","Falloff","Damage Per Second","WSA"))
-                    for i in turretlist:
-                        filet = open(i,'r')
-                        content = filet.readlines()
-                        print("%20s\t%10s\t%10s\t%10s\t%10s"% (content[0][:-1],content[1][:-1],content[2][:-1],content[3][:-1],content[4][:-1]))
-
-                    choice = int(input("Choose a turret type"))
-                    if (choice <= -1 or choice >= len(turretlist)):
-                        print("\nError:Choose a valid number!\n")
-                    else:
-                        shipspecs.append(turretlist[choice])
-
+                    if len(shipsinfleet) == len(numshipsinfleet):
+                        f.write("\n" + str(len(shipsinfleet)))
+                        for i in range(0,len(shipsinfleet)):
+                            f.write("\n" + str(shipsinfleet[i]) + " " + str(numshipsinfleet[i]))
+            if state == '2': # todo: redo ship stuff here
                 #todo: Add in confirmation before write
-
-
-
-
-                f = open(shipspecs[0] + ".ship","w+")
-                for i in range(0,len(shipspecs)):
-                    f.write(shipspecs[i] + "\n")
-                f.close()
+                shipspecs_dict = self.make_new_ship_spec()
+                with open(shipspecs_dict["name"] + ".ship","w+") as f:
+                    pass # todo: do stuff
 
             if state == '3':
                 shipspecs = []

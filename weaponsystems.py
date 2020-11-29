@@ -26,10 +26,10 @@ class missile_turret():
     pass
 
 
-def parse_weapon(weapon):
+def parse_weapon(weapon: str) -> turret:
     weaponfile = open(weapon, 'r')
     weaponlines = weaponfile.readlines()
-    name,optimal,falloff,dps,wsa = map(str,weaponlines)
+    name, optimal, falloff, dps, wsa = map(str, weaponlines)
     # shipspecs.append(input("Name of Turret"))
     # shipspecs.append(input("Optimal of Turret"))
     # shipspecs.append(input("Falloff of Turret"))

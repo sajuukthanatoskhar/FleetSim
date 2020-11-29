@@ -56,7 +56,7 @@ class ship:
         self.loc = location(ship_dict['x'],
                             ship_dict['y'],
                             ship_dict['z'])
-        self.weapon = ship_dict['weapons']
+        self.weapon = ship_dict['weapons'] # todo: problem here
         self.signature = ship_dict['signature']
         self.current_target = None
         self.damagedealt_this_tick = None
@@ -308,7 +308,8 @@ if __name__ == "__main__":
 
         state = "wait-state"
         while (state == "wait-state"):
-            if (UDP_Server_Client.Server_Client.send_packet(listenersock, state, remoteip, Sender_Port_No) == -1):
+            if (UDP_Server_Client.Server_Client.send_packet(listenersock,
+                                                            state, remoteip, Sender_Port_No) == -1):
                 print("Error")
             else:
                 state = "packet_in"
