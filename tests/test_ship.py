@@ -15,6 +15,7 @@ ship_dict = {
     "z" : 1,
     "fleet" : None,
     "weapons": None,
+    "projections": None,
     "capacitor": {"capacitor_capacity": 5000,
                   "max_capacitor": 5000,
                   "time_to_recharge": 100,

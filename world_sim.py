@@ -511,7 +511,6 @@ if __name__=="__main__":
 
     printMMD()
     while(True):
-
         #menu_state = '2'
         menu_state = input("\n\nTEST Alliance Fleet Simulator \n1.\tMake fleet?\n2.\tBattlefleets?\n3.\tQuit\n\nMake your choice, Fleet Commander of Test... \n $ ")
         if menu_state == '1':

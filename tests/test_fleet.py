@@ -3,46 +3,8 @@ import fleet
 import Ship.ship as ship
 import Ship.capacitor as capacitor
 import Ship.ship_health as shiphealth
+from tests.test_ship import ship_dict as shipdict
 
-shipdict = {
-    "name": "TestShip",
-    "hitpoints": 150,
-    "damage": 150,
-    "targettingrange": 100000,
-    "speed": 200,
-    "inertia": 1.5,
-    "x": 0,
-    "y": 0,
-    "z": 0,
-    "weapons": "Small Autocannon.turret",
-    "signature": 50,
-    "capacitor":
-        {
-            "capacitor_capacity": 5000,
-            "max_capacitor": 4999,
-            "time_to_recharge": 250,
-            "neut_resistance": 0.5
-        },
-    "shield":
-        {
-            "hp": 1000,
-            "resistance": [60, 40, 40, 20],
-            "shield_leak": 0.1,
-            "recharge_time": 100
-        },
-    "armor":
-        {
-            "hp": 1000,
-            "resistance": [60, 40, 40, 20]
-        },
-    "hull":
-        {
-            "hp": 1000,
-            "resistance": [60, 40, 40, 20]
-        }
-
-
-}
 
 tested_ship = ship.ship(shipdict)
 

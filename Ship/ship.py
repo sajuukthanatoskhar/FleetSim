@@ -57,6 +57,7 @@ class ship:
                             ship_dict['y'],
                             ship_dict['z'])
         self.weapon = ship_dict['weapons'] # todo: problem here
+        self.projection = ship_dict['projections']
         self.signature = ship_dict['signature']
         self.current_target = None
         self.damagedealt_this_tick = None
