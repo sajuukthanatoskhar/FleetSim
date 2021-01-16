@@ -1,20 +1,17 @@
 from unittest import TestCase
 import Ship.ship_health as ship_health
+from tests.test_ship import ship_dict as shield_dict
 
-shield_dict = {
-            "hp": 500,
-            "resistance": [25, 50, 75, 100],
-            "shield_leak": 0.1,
-            "recharge_time": 10
-}
+
 
 tested_ship_shield = ship_health.Shield(shield_dict)
-testing_weapon = ship_health.damage_types([100,100,100,100])
+testing_weapon = ship_health.damage_types([100, 100, 100, 100])
+
 
 class TestShield(TestCase):
     def test_recharge_tick(self):
         tested_ship_shield.hp = 250
-        self.assertAlmostEqual(103.55, tested_ship_shield.recharge_tick(), 2, "Shield Recharge Functions")
+        self.assertAlmostEqual(1.37, tested_ship_shield.recharge_tick(), 2, "Shield Recharge Functions")
 
 
 class TestHP_Object(TestCase):
@@ -24,8 +21,8 @@ class TestHP_Object(TestCase):
 
     def test_be_attacked(self):
         tested_ship_shield.hp = tested_ship_shield.max_hp
-        tested_ship_shield.be_attacked(testing_weapon)
-        self.assertEqual(350, tested_ship_shield.hp)
+        tested_ship_shield.be_attacked(shield_dict["weapons"])
+        self.assertAlmostEquals(169.125, tested_ship_shield.hp, 2)
 
 
 class TestDamage_types(TestCase):

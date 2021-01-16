@@ -3,13 +3,21 @@ from Ship.ship_health import status
 
 class capacitor:
     def __init__(self, cap_dict):
-        self.capacitor_level = cap_dict["capacitor_capacity"]
-        self.max_capacitor = cap_dict["max_capacitor"]
-        self.recharge_time = cap_dict["time_to_recharge"]
-        if cap_dict["neut_resistance"] > 1 or cap_dict["neut_resistance"] < 0:
-            raise Exception("Energy Neutralizer must be between 0 and 1 in decimal")
-        else:
-            self.neut_res = cap_dict["neut_resistance"]
+        """
+
+        :param cap_dict: Ship dictionary
+        """
+        self.capacitor_level = cap_dict["capacitorCapacity"]
+        self.max_capacitor = cap_dict["capacitorCapacity"]
+        self.recharge_time = cap_dict["rechargeRate"]/1000 # given in ms in EFS export
+        try:
+            if cap_dict["energyWarfareResistance"] > 1 or cap_dict["energyWarfareResistance"] < 0:  # todo: Not given out in EFS
+                raise Exception("Energy Neutralizer must be between 0 and 1 in decimal")
+            else:
+                self.neut_res = 1-cap_dict["energyWarfareResistance"]
+        except KeyError:
+            self.neut_res = 0.0
+
 
     def recharge_tick(self):
         capacitor_cap_ratio = (self.capacitor_level / self.max_capacitor)
@@ -19,7 +27,7 @@ class capacitor:
     def modify_capacitor(self, amount, rep = False) -> (int, float):
         '''
         Modifies HP with either an attack or healing
-        :param rep: is it a repairer or not
+        :param rep: is it a repairer or not  # todo: EFS has repairers included and could be used here
         :param amount: amount to be healed by
         :return: status if the hp_object is fully_healed, depleted or damaged
         '''

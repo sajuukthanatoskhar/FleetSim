@@ -12,6 +12,7 @@ import Pyro4
 import threading
 import os
 import Ship.ship
+import json
 
 @Pyro4.expose
 class world():
@@ -36,39 +37,49 @@ class world():
 
 
 
-    '''All fleets will move/anchor '''
-    def anchor_movephase(self):
-        for i in range(0,len(self.fleets)):
+    ''''''
+    def anchor_movephase(self) -> None:
+        """
+        All fleets will move/anchor
+        :return: None
+        """
+        for i in range(0, len(self.fleets)):
             i.anchorup()
 
 
-
-
-
-    '''Process all fleets attacking'''
     def attack_phase(self):
-        # for i in range(0, len(self.fleets)):
-        #     i.attack_other_fleet()
+        """
+        Process all fleets attacking
+        :return: None
+        """
         pass
-    '''Process all ships below <0 hull/hp'''
+
     def destroyed_ships_processing(self):
+        """
+        Process all ships below <0 hull/hp
+        :return:
+        """
         pass
 
     def present_fleetchoices(self):
+        """
+
+        :return:
+        """
         pass
 
     def ship_allocation(self):
+        """
+        Allocates ships
+        :return:
+        """
         for i in self.playersplaying:
             choice = -1
             while(choice != -2):
                 fleetchoices= self.view("fleet")
-
                 Fleetstring = ""
-
                 for j in range(0,len(fleetchoices)):
                     Fleetstring = str(j) + ". " + fleetchoices[j] + "\n"
-
-
                 message = "\nPlayer, which fleet do you want?  If you don't want to add a fleet, do -2"
                 message = Fleetstring + message
                 self.listenersock.sendto(message.encode("utf-8"),(i.address,int(i.port)))
@@ -81,27 +92,13 @@ class world():
                 elif int(choice) == -2:
                     choice = -2
 
-                #todo: after fleets have been chosen by all players, we move on to battle
-
-
-
-
-
-
-    # def update_world_population(self,fleet):
-    #     pass
-
-
-
-    def worldstate(self,state):
-        if state == 0:
+    def worldstate(self, world_state_val):
+        if world_state_val == 0:
             print("collecting players and IPs")
             self.collect_ip_players()
             if len(self.playersplaying) == self.Howmanyplayers:
-                state = 1
-
-
-        if state == 1:
+                world_state_val = 1
+        if world_state_val == 1:
             count = 0
             print("\nAllocating Fleets to players, please wait")
             for player in self.playersplaying:
@@ -114,13 +111,13 @@ class world():
                 if data == "ok":
                     count = 1 + count
             print("count = %s"%str(count))
-            state = 2
+            world_state_val = 2
 
 
 
 
 
-        if state == 2:
+        if world_state_val == 2:
             statechoice = -1
             while(statechoice == -1): #Printing out each player, IP and fleets
                 print("%-30s %-20s %-50s" % ("Player Name","Address","Owned Fleets\n"))
@@ -132,8 +129,8 @@ class world():
 
                 self.ship_allocation()  # todo players need to get fleets.
                 statechoice = 0
-                state = 3
-        if state == 3:
+                world_state_val = 3
+        if world_state_val == 3:
 
             for player in self.playersplaying:
                 print("%s having fleets loaded...\n"%player.name)
@@ -142,7 +139,7 @@ class world():
 
             capitulationstatus = 0
             count = 0
-            for players in self.playersplaying:
+            for players in self.playersplaying:  #todo: put in function
                 for singleplayerfleets in players.owned_fleets:
                     for shippyships in singleplayerfleets.ships: #I can't remember if there is a naming conflict for any of these
                         shippyships.loc.x = 100000*math.cos(3.14*count/len(self.playersplaying)) + random.randint(-3,3)
@@ -265,7 +262,7 @@ class world():
 
 
 
-        return state
+        return world_state_val
 
 
 
@@ -300,23 +297,31 @@ class world():
         pass
 
     def make_new_ship_spec(self) -> dict:
-        ship_dict = dict
-        ship_dict["name"] = input("\nName of ship? $ ")
-        ship_dict['damage'] = input("\nDPS of Ship? $")
-        return ship_dict
+        import ast
+        try:
+            ship_dict = ast.literal_eval(input("\nCopy and Paste the pyfa EFS (Fit -> Copy To -> Select a Format (EFS) -> Ok)"))
+        except Exception as e:
+            print("Exception occurred : {}".format(e))
+            ship_dict = {"Error": e}
+        finally:
+            return ship_dict
 
     def buildfleet(self):
+        """
+        Builds more than just fleets
+        :return:
+        """
         state = -1
         while(True):
-            state = input("1. Design Fleet\n2. Design Ships\n3. Design Weapon"
-                          "\n4. View Fleets made\n5. View Ships made\n6. View Turrets\n7. Go back")
+            state = input("1. Design Fleet\n2. Design Ships\n3. Design Weapon\n4. Verify Pyfa EFS import"
+                          "\n5. View Fleets made\n6. View Ships made\n7. Go back")
             if state == '1':
                 fleetname = input("Name of Fleet? $ ")
                 shipsinfleet = []
                 numshipsinfleet = []
                 shiplist = self.view("ship")
                 choice = -1
-                while(choice == -1):
+                while choice == -1:
                     choice = -1
 
                     while(int(choice) <= -1 or int(choice) >= len(shiplist)-1):
@@ -361,38 +366,33 @@ class world():
             if state == '2': # todo: redo ship stuff here
                 #todo: Add in confirmation before write
                 shipspecs_dict = self.make_new_ship_spec()
-                with open(shipspecs_dict["name"] + ".ship","w+") as f:
-                    pass # todo: do stuff
+                filename = "".join(filter(str.isalnum, shipspecs_dict['name']))
+                with open("{}.ship".format(filename), "w+") as f:
+                    f.write(json.dumps(shipspecs_dict))
+                    f.close()
 
             if state == '3':
-                shipspecs = []
-                shipspecs.append(input("Name of Turret"))
-                shipspecs.append(input("Optimal of Turret"))
-                shipspecs.append(input("Falloff of Turret"))
-                shipspecs.append(input("DPS of Turret"))
-                shipspecs.append(input("WSA of Turret"))
-                f = open(shipspecs[0] + ".turret","w+")
-                #Design weapons
-                for i in range(0,len(shipspecs)):
-                    f.write(shipspecs[i] + "\n")
-
-                f.close()
-
+                # Deprecated: No more weapon generation, I hated this with a passion.  - STK
+                print("Deprecated")
             if state == '4':
-                self.view('fleet')
+                print("This is to test the import of the EFS of a file")
+                self.validate_pyfa_EFS()
             if state == '5':
-                self.view('ship')
+                self.view('fleet')
             if state == '6':
-                self.view('turret')
-
+                self.view('ship')
             if state == '7':
+                print("Deprecated") # Deprecated: No more weapon generation, I hated this with a passion.  - STK
                 return -1
 
-    def read_ship(self, shipfile):
-        pass
+    def view(self, param: str) -> list:
+        """
+        Presents a list of files based on what param is
 
-    def view(self, param):
-        availabilitylist = [] # for shipcreation
+        :param param: can be 'ship' or 'fleet' or 'weapon'
+        :return: a list of param.file filenames to refer to that were saved
+        """
+        availabilitylist = []  # for shipcreation
         count = 0
         print('\n***********************************************************\n\nSaved %ss\n-----------'%param)
         for i in os.listdir():

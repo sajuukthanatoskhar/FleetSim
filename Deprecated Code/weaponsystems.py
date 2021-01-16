@@ -26,7 +26,7 @@ class missile_turret():
     pass
 
 
-def parse_weapon(weapon: str) -> turret:
+def parse_weapon(weapon: dict) -> turret:
     weaponfile = open(weapon, 'r')
     weaponlines = weaponfile.readlines()
     name, optimal, falloff, dps, wsa = map(str, weaponlines)

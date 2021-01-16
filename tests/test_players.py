@@ -2,7 +2,7 @@ from unittest import TestCase
 import fleet
 import players
 import pytest
-
+from tests.test_ship import ship_dict as ship_dict
 
 @pytest.fixture
 def setup_test_fleet_and_player():
@@ -43,6 +43,6 @@ def test_populatefleet(setup_player_and_connected_fleet):
 
     tested_players_fleet = setup_player_and_connected_fleet[1].populatefleet("Muninn.fleet")
     errors = []
-    if tested_players_fleet.ships[0].name != "Muninn":
+    if tested_players_fleet.ships[0].name != "MuninnTESTFleetMuninn":
         errors.append("Incorrect name :" + tested_players_fleet.ships[0].name)
     assert not errors, "Errors occurred occured: \n {}".format("\n".join(errors))

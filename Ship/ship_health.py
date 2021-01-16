@@ -1,4 +1,5 @@
 import math
+from typing import Tuple
 
 
 class damage_types:
@@ -28,44 +29,62 @@ status = {
     'damaged': -1
 }
 
-
+dict_damage_types = ["em", "therm", "kin", "exp"]
 class HP_Object:
-    def __init__(self, hp: int, resistance: list):
+
+
+    def __init__(self, hp: int, resonance: dict):
         '''
 
         :param hp:  total hp of the object
         :param resistance: Is the resistance between 0 and 1 -> [EM, Therm, Kinetic, Explosive]
         '''
+
         self.max_hp = hp
         self.hp = hp
-        self.resistance = resistance
+        self.resistance = [  # value given is resonance (1-resistance value)
+            1-resonance["em"],
+            1-resonance["therm"],
+            1-resonance["kin"],
+            1-resonance["exp"]
+        ]
 
-    def modify_hp(self, amount) -> int:
+        self.resonance = resonance
+
+    def modify_hp(self, amount) -> Tuple[int, int]:
         '''
         Modifies HP with either an attack or healing
         :param amount: amount to be healed by
-        :return: status if the hp_object is fully_healed, depleted or damaged
+        :return: status if the hp_object is fully_healed, depleted or damaged and remaining damage.
         '''
         self.hp -= amount
+        remaining_damage = 0
         if self.hp < 0:
+            remaining_damage = -1*(self.hp - amount)
             self.hp = 0
-            return status['fully_healed']
+            return status['depleted'], remaining_damage
         elif self.hp > self.max_hp:
             self.hp = self.max_hp
-            return status['depleted']
+            return status['fully_healed'], remaining_damage
         else:
-            return status['damaged']
+            return status['damaged'], remaining_damage
 
-    def be_attacked(self, damage: damage_types):
-        for damage_type, damage_res in zip(damage.damage_component, self.resistance):
-            self.modify_hp(damage_type * (1 - damage_res * 0.01))
-
+    def be_attacked(self, damage_dealt_types: dict):
+        total_damage = 0
+        count = 0
+        for weapon in damage_dealt_types.items():
+            # for damage_type, damage_res in zip(dict_damage_types, self.resistance):
+            damage_type = weapon[0]
+            total_damage += damage_dealt_types[damage_type] * self.resonance[damage_type]
+            count += 1
+        return total_damage
 
 class Shield(HP_Object):
-    def __init__(self, shield_dict):
-        super().__init__(shield_dict['hp'], shield_dict['resistance'])
-        self.shield_leak = shield_dict['shield_leak']
-        self.recharge_time = shield_dict['recharge_time']
+    def __init__(self, shield_dict: dict):
+        super().__init__(shield_dict['hp']["shield"],
+                         shield_dict['resonance']['shield'])
+        self.shield_leak = 0.25  # shield_dict['shield_leak'] # todo: assume 0.25
+        self.recharge_time = shield_dict['shieldrechargetime']/1000
 
     def recharge_tick(self) -> float:
         '''
@@ -79,11 +98,11 @@ class Shield(HP_Object):
 
 class Armor(HP_Object):
     def __init__(self, armor_dict):
-        super().__init__(armor_dict['hp'],
-                         armor_dict['resistance'])
+        super().__init__(armor_dict['hp']['armor'],
+                         armor_dict['resonance']['armor'])
 
 
 class Hull(HP_Object):
     def __init__(self, hull_dict):
         super().__init__(hull_dict['hp'],
-                         hull_dict['resistance'])
+                         hull_dict['resonance']['hull'])

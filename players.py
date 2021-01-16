@@ -1,5 +1,4 @@
 import fleet
-import weaponsystems
 
 
 class players():
@@ -24,7 +23,7 @@ class players():
         for i in range(0, int(lines[1])):
             parsed_fleet = lines[i + 2].split(" ")  # Form is ["Muninn", "10"]
             for j in range(0, int(parsed_fleet[1])):
-                """ This gets the amount of shits into fleet
+                """ This gets the amount of ships into fleet
                 """
                 new_fleet.add_ship_to_fleet(self.parse_ship_and_into_fleet(parsed_fleet))
             # should be put into its own fleet somewhere
@@ -36,13 +35,11 @@ class players():
 
     def parse_ship_and_into_fleet(self, parsed_fleet):
         from Ship import ship
-        import Ship.capacitor
-        import Ship.ship_health
         import json
         ship_dict = dict
         with open(parsed_fleet[0].replace('.fleet', '.ship'), 'r') as shipfile:
             ship_dict = json.load(shipfile)
 
-        ship_dict['weapons'] = weaponsystems.parse_weapon(ship_dict['weapons'])
+        #ship_dict['weapons'] = weaponsystems.parse_weapon(ship_dict['weapons'])
         ship = ship.ship(ship_dict)  # todo: problem
         return ship

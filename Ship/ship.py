@@ -1,26 +1,17 @@
 #! /usr/bin/env python
-import json
-import sys
-import UDP_Server_Client.Server_Client
+from typing import Tuple
+
 import fleet
 import numpy as np
 import weakref
 import random
-import os
-import pickle
-import proc as proc
-import Pyro4
-import weaponsystems
 import math
-from time import sleep
 import Ship.capacitor
 import Ship.ship_health
 
 debug = 0
-import socket
 
 
-@Pyro4.expose
 class location:
     def __init__(self, x, y, z):
         self.x = x
@@ -42,32 +33,81 @@ class location:
         self.zold = self.z
 
 
-@Pyro4.expose
+def get_type_damage(weapon: dict, avg: float) -> dict:
+    """
+    Gets the total type damage done
+    :param weapon: The current weapon being shot with
+    :param avg: the average damage modifier
+    :return: dictionary of em/therm/kin/exp damage being done to the enemy ship
+    """
+    type_damage = {}
+    for damage_type in weapon["dps_spread"].items():
+        type_damage[damage_type[0]] = damage_type[1] * avg
+    return type_damage
+
+
+def get_spread(weapon: dict) -> dict:
+    """
+    Gets a dict of the em/therm/kin/exp percentage share of total volley damage
+    :param weapon: The current weapon being shot with
+    :return:
+    """
+    spread = {}
+    for damage_type in weapon["dps_spread"].items():
+        spread[damage_type[0]] = damage_type[1] / weapon["dps"]
+    return spread
+
+
 class ship:
     instances = []
 
-    def __init__(self, ship_dict):
-        self.hp = ship_dict['hitpoints']
-        self.dps = ship_dict['damage']
-        self.targettingrange = ship_dict['targettingrange']
-        self.speed = ship_dict['speed']
-        self.inertia = ship_dict['inertia']
-        self.name = ship_dict['name']
-        self.loc = location(ship_dict['x'],
-                            ship_dict['y'],
-                            ship_dict['z'])
-        self.weapon = ship_dict['weapons'] # todo: problem here
+    def __init__(self, ship_dict, x=0, y=0, z=0):
+        """
+
+        :param ship_dict: just a
+        :param x: starting x coordinate
+        :param y: starting y coordinate
+        :param z: starting z coordinate
+        """
+        self.ship_inf = ship_dict
+        self.hp = ship_dict['hp']['shield'] + ship_dict['hp']['armor'] + ship_dict['hp']['hull']
+        self.dps = ship_dict['weaponDPS']
+        self.targettingrange = ship_dict['maxTargetRange']
+        self.speed = ship_dict['maxSpeed']  # this is not the base speed if there is an afterburner present
+
+        if ship_dict["usingMWD"] == 1:
+            self.speed_MWDprop = ship_dict['mwdPropSpeed']
+            self.unpropedSig = ship_dict['unpropedSig']
+            self.unpropedSpeed = ship_dict['unpropedSpeed']
+
+        try:
+            self.inertia = ship_dict['inertia']
+        except KeyError:
+            print("key error")
+            self.inertia = 1.5
+        self.name = "".join(filter(str.isalnum, ship_dict['name']))
+        self.loc = location(x,
+                            y,
+                            z)
+
         self.projection = ship_dict['projections']
-        self.signature = ship_dict['signature']
+        self.signature = ship_dict['signatureRadius']
+        self.can_lock = True
+        self.jammed_by = []
+
+        # Health and Capacitor
+        self.ship_shield = Ship.ship_health.Shield(ship_dict)
+        self.ship_armor = Ship.ship_health.Armor(ship_dict)
+        self.ship_hull = Ship.ship_health.Hull(ship_dict)
+        self.ship_capacitor = Ship.capacitor.capacitor(ship_dict)
+
+        # Fleet Sim Related
         self.current_target = None
-        self.damagedealt_this_tick = None
+        self.damage_dealt_this_tick = None
         self.distance_from_target = None
         self.drone_bay = None
         self.angular_velocity = None  # angular velocity of current target
-        self.ship_shield = Ship.ship_health.Shield(ship_dict['shield'])
-        self.ship_armor = Ship.ship_health.Armor(ship_dict['armor'])
-        self.ship_hull = Ship.ship_health.Hull(ship_dict['hull'])
-        self.ship_capacitor = Ship.capacitor.capacitor(ship_dict['capacitor'])
+
         if fleet != None:
             self.fleet = fleet
 
@@ -75,8 +115,11 @@ class ship:
             self.is_logi = True
         else:
             self.is_logi = False
-        self.__class__.instances.append(weakref.proxy(self))
 
+        self.weapon = ship_dict['weapons']  # todo: problem here
+        self.loss_mail_final_blow_ship = {}  # A ship will be on here
+        self.loss_mail_damage_lost = {}
+        self.__class__.instances.append(weakref.proxy(self))
 
     def check_range(self, target):
         x = self.loc.x - target.loc.x
@@ -86,21 +129,42 @@ class ship:
         mag = np.array([x, y, z])
         return np.linalg.norm(mag)
 
-    def attack(self, target):
-        success_value, test_value = self.calc_weapon_to_hit_chance(target)
+    def attack(self, target: Ship):
+        """
+        Checks that
+        :param target:
+        :return:
+        """
 
-        if test_value > success_value:
-            self.damagedealt_this_tick = 0
-            # Weapon miss
+        # todo: requires test
+
+        self.damage_dealt_this_tick = 0
+        if not self.sensor_check(target):  # check if we are able to lock the target (sensor damps and ecm)
             return 0
-        if self.check_range(
-                target) <= self.targettingrange:  # todo: the self.range should be refactored as the targetting range AND NOT worded as if it is a turret range and falloff, that is simply wrong
-            lower, upper, avg = self.calc_weapon_avg_dps_mod(target, test_value)
-            target.hp -= self.weapon.dps * avg  # todo: the dps should not sit at this average - it needs to modified based on the number received from the tohit
-            print("\nDPS - %d from %s " % (math.floor(self.weapon.dps * avg), self.name))
-            self.damagedealt_this_tick = math.floor(self.weapon.dps * avg)
 
-        if target.hp <= 0:
+        for weapon in self.weapon:  # go through all weapon systems
+            if self.weapon_is_cycling(weapon):  # todo: weapon cycling requires a second tick system
+                return 0
+            success_value, test_value = self.calc_weapon_to_hit_chance(weapon, target)
+            if test_value > success_value:  # Weapon miss
+                self.damage_dealt_this_tick = 0
+                return 0
+
+            spread = get_spread(weapon)  # check the fractional %tage of damage
+            still_damaging = True
+            lower, upper, avg = self.calc_weapon_mod(test_value)  # use test value to indicate damage modifier
+            damage_dealt = get_type_damage(weapon, avg)
+
+            while still_damaging:
+                """
+                Recursively deal damage to the ship until we run out of damage to process on shield/armor/hull or
+                the ship is dead
+                """
+                damage_this_round, damage_dealt, still_damaging = self.deal_damage(spread, damage_dealt,
+                                                                                   target, still_damaging)
+                self.damage_dealt_this_tick += damage_this_round
+
+        if target.ship_hull.hp <= 0:
             print("*************%s destroyed **********************" % target)
 
     def calculate_location_3d_diff(self, target):
@@ -154,21 +218,27 @@ class ship:
 
         return math.sqrt(x ** 2 + y ** 2 + z ** 2)
 
-    def calc_weapon_avg_dps_mod(self, target, chance):
-        # chance,testedvalue = self.calc_weapon_to_hit_chance(target)
-        mod = 1 - chance
-        lower = 0.5
-        upper = 1.49 - mod
-        # lower, upper, avgdps = self.calc_weapon_avg_dps_mod(target)
-        avgdps = (chance - 0.01) * ((lower + upper) / 2) + 0.03
-        return lower, upper, avgdps
+    def calc_weapon_mod(self, chance):
+        """
+        Modifies weapon damage
+        :param chance:
+        :return:
+        """
+        if chance >= 0.01:
+            return chance + 0.49
+        else:
+            return 3
 
-    def calc_tracking_score(self):
-        return self.weapon.tracking
+        # mod = 1 - chance
+        # lower = 0.5
+        # upper = 1.49 - mod
+        # # lower, upper, avgdps = self.calc_weapon_mod(target)
+        # avgdps = (chance - 0.01) * ((lower + upper) / 2) + 0.03
+        # return lower, upper, avgdps
 
-    def calc_weapon_to_hit_chance(self, target):
-        chance = 0.5 ** ((self.calculate_angular(target) / (self.calc_tracking_score() * target.signature) ** 2 + (
-                    max(0, (self.calc_distance(target) - self.weapon.optimal)) / self.weapon.falloff) ** 2))
+    def calc_weapon_to_hit_chance(self, weapon: dict, target: Ship):
+        chance = 0.5 ** ((self.calculate_angular(target) / (weapon["tracking"] * target.signature) ** 2 + (
+                max(0, (self.calc_distance(target) - weapon["optimal"])) / weapon["falloff"]) ** 2))
         # chance = 0.5
         testedvalue = random.random()
         return chance, testedvalue
@@ -196,9 +266,9 @@ class ship:
         if self.check_range(target) > self.targettingrange:
             print(
                 "Target Distance %s, ship target range %s" % (str(self.check_range(target)), str(self.targettingrange)))
-            # fleet.currentanchor.move_ship_to(target) #todo: is this ok?  Like what is going on here.  Is the anchor actually moving #[number of fleetmembers]# times
+
             # No, there is no movement, this is strictly an attack protocol.  Wtf, who coded this?  Oh it was me, Sajuuk
-            self.damagedealt_this_tick = 0
+            self.damage_dealt_this_tick = 0
             pass
         else:
             self.attack(target)
@@ -230,121 +300,71 @@ class ship:
         self.loc.y -= y
         self.loc.z -= z
 
+    def sensor_check(self, target: Ship):
+        """
+        Checks that the target is in range
+        :param target: The ship that is being locked
+        :return: 0 for no lock possible, 1 for lock possible on target
+        """
+        if self.check_range(target) <= self.targettingrange and \
+                ((not self.can_lock and self.target_is_jammer(target)) or self.can_lock):
+            return 1
+        else:
+            self.damage_dealt_this_tick = 0
+            return 0
+
+    def target_is_jammer(self, target: Ship):
+        """
+        Checks that the target is an ecm jammer
+        :param target: a ship that is jamming this current ship
+        :return:
+        """
+        return target in self.jammed_by
+
+    def weapon_is_cycling(self, weapon: dict):
+        pass  # todo: to factor in weapon cycle times, at the moment
+
+    def deal_damage(self, spread: dict, weapon: dict,
+                    damage_dealt: dict, target: Ship, still_damaging: bool) -> Tuple[float, dict, bool]:
+        status = None
+        raw_hp_damage = 0
+        remaining_damage = 0
+        for hp_component in [target.ship_shield, target.ship_armor, target.ship_hull]:
+            if hp_component.hp <= 0:
+                continue  # move to next component to be damaged
+            raw_hp_damage = hp_component.be_attacked(damage_dealt)
+            status, remaining_damage = hp_component.modify_hp(raw_hp_damage)
+            break
+        try:
+            if status == -1 or target.ship_hull.hp <= 0:
+                still_damaging = False
+        except Exception as e:
+            print(e)
+        if target.ship_hull.hp > 0:
+            damage_dealt = self.split_back_to_components(spread, weapon, remaining_damage)
+
+        return raw_hp_damage - remaining_damage, damage_dealt, still_damaging
+
+    def split_back_to_components(self, spread: dict, weapon: dict, remaining_damage: float) -> dict:
+        """
+        Splits the remaining damage back to type damage
+        :param spread: the percentage of spread
+        :param weapon: The weapon being used
+        :param remaining_damage: The remaining damage after piercing shield or armor
+        :return:
+        """
+        damage_split_dict = {}
+        for damage_type in weapon["dps_spread"].items():
+            damage_split_dict[damage_type[0]] = spread[damage_type[0]] * remaining_damage
+
+        return damage_split_dict
+
 
 def printstatsheader():
     # print("%30s %s\t%s\t%\t%s"%("Ship Name","Ship HP","X","Y","Z"))
     print("\n%-30s %-10s %-10s %-5s %-5s %-5s %-10s %-25s %-20s %-15s %-25s" % (
-    "Ship Name", "Fleet", "Ship HP", "X", "Y", "Z", "Is Anchor", "Target", "Distance", "Damage Dealt",
-    "Angular Velocity"))
+        "Ship Name", "Fleet", "Ship HP", "X", "Y", "Z", "Is Anchor", "Target", "Distance", "Damage Dealt",
+        "Angular Velocity"))
     return ("\n%-30s %-10s %-10s %-5s %-5s %-5s %-10s %-25s %-20s %-15s %-25s" % (
-    "Ship Name", "Fleet", "Ship HP", "X", "Y", "Z", "Is Anchor", "Target", "Distance", "Damage Dealt",
-    "Angular Velocity"))
-
-
-if __name__ == "__main__":
-    UDP_port_no = 6789
-    Sender_Port_No = 6790
-    UDP_IP_Address = "127.0.0.1"
-    small_autocannon = weaponsystems.turret(100, 80, 90, "Small Autocannon", 8)
-    FleetRed = fleet.Fleet("Red")
-    FleetBlue = fleet.Fleet("Blue")
-    serversock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    serversock.bind(("", UDP_port_no))
-    remoteip = "192.168.178.22"
-    listenersock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    # ship1 = ship(40,10,10,5,1,"Thanatos",50,100,20,FleetRed)
-    # ship2 = ship(50,9,50,2,1,"BoopityBoppity",50,150,20,FleetBlue)
-
-    # FleetRed.add_ship_to_fleet(ship1)
-    # FleetBlue.add_ship_to_fleet(ship2)
-    # for i in range(0, 10, 1):
-    #     FleetRed.ships.append(
- #           ship(800, 2, 60, 5, 1, "Thanatos_" + str(i), random.randint(30, 150), random.randint(30, 150), 20, FleetRed,
-  #               small_autocannon))
-#        FleetBlue.ships.append(ship(500, 2, 70, 2, 1, "Nyx_" + str(i), 50, 150, 20, FleetBlue, small_autocannon))
-    # while ship2.hp > 0 and ship1.hp > 0:
-
-    # ship1.main_attack_procedure(ship2)
-    # ship2.evasive_attack_procedure(ship1,30)
-#    FleetRed.ships.append(ship(40, 10, 10, 5, 1, "Shitty Pilot #1", 100, 100, 20, FleetRed, small_autocannon))
-#     FleetRed.choosenewanchor()
-#     FleetBlue.choosenewanchor()
-#     FleetRed.fleet_choose_primary_now(FleetBlue, "closest")
-#     FleetBlue.fleet_choose_primary_now(FleetRed, "closest")
-#     fleets = [FleetRed, FleetBlue]
-    while (len(FleetRed.ships) > 0 and len(FleetBlue.ships) > 0):
-        FleetRed.anchorup()
-        FleetBlue.anchorup()
-
-        # Attack
-        FleetRed.attack_other_fleet(FleetBlue, "Basic Anchor and attack")
-        FleetBlue.attack_other_fleet(FleetRed, "Basic Anchor and attack")
-
-        processing_dead = 1
-        #todo:
-        '''
-        for fleet in fleets:
-            
-        
-        '''
-
-        while (processing_dead):
-            processing_dead = FleetRed.checkenemyfleetdead(FleetBlue)
-
-        processing_dead = 1
-        while (processing_dead):
-            processing_dead = FleetBlue.checkenemyfleetdead(FleetRed)
-
-        line = printstatsheader()
-        listenersock.sendto(line.encode('UTF-8'), (remoteip, Sender_Port_No))
-        # listenersock.sendto(FleetRed.printstats(),(UDP_IP_Address,Sender_Port_No))
-        listy = FleetRed.printstats()
-        for i in range(0, len(listy)):
-            listenersock.sendto(listy[i].encode('UTF-8'), (remoteip, Sender_Port_No))
-
-        FleetBlue.printstats()
-
-        print("End of round")
-
-        state = "wait-state"
-        while (state == "wait-state"):
-            if (UDP_Server_Client.Server_Client.send_packet(listenersock,
-                                                            state, remoteip, Sender_Port_No) == -1):
-                print("Error")
-            else:
-                state = "packet_in"
-
-        while (state == "packet_in"):  # receiving from menu
-
-            state = UDP_Server_Client.Server_Client.receive_packet(serversock).split(" ")
-
-            if (state != '3'):
-                print(state)
-            if state == '4':
-                print("Moving on")
-                break
-            if state[0] == '5':
-                # UDP_Server_Client.Server_Client.send_packet(listenersock,state,UDP_IP_Address,Sender_Port_No)
-                X = state[1]
-                Y = state[2]
-                Z = state[3]
-                fleetname = state[4]
-
-                print("Move to certain location - for anchor \nX = something \nY = something \nZ = something")
-
-                break
-            if state == '1':
-                print("")
-
-    # anchor.findclosesthostileshipinfleet(FleetBlue)
-
-    # del FleetRed.ships[1]
-
-    # print(FleetRed.ships[1].name)
-
-    # printstats(ship1)
-    # printstats(ship2)
-    print("---------------------------------------------------------")
-    # print("Ship 1" + str(ship1.name) + " " + str(ship1.hp))
-    # print("Ship 2" + str(ship2.name) + " " + str(ship2.hp))
+        "Ship Name", "Fleet", "Ship HP", "X", "Y", "Z", "Is Anchor", "Target", "Distance", "Damage Dealt",
+        "Angular Velocity"))

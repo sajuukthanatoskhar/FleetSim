@@ -30,7 +30,7 @@ from unittest import TestCase
 #             distance.append(redship.calc_distance(blueship))
 #             test,success = redship.calc_weapon_to_hit_chance(blueship)
 #             chancesuccess.append(test)
-#             lower,upper,avgdps = redship.calc_weapon_avg_dps_mod(blueship,test)
+#             lower,upper,avgdps = redship.calc_weapon_mod(blueship,test)
 #             damage.append(math.floor(redship.weapon.dps*avgdps))
 #
 #             print("%s,%s,%s"% (distance[i],chancesuccess[i],damage[i]))
@@ -55,4 +55,4 @@ from unittest import TestCase
 #
 # # def func(x,a,b,c,e,f):
 # #     return np.power(0.5,np.power((a*40000)/(b*c),2)+np.power(max(0,x-e)/f,2))
-# #     #     print(redship.calc_weapon_avg_dps_mod(blueship))
+# #     #     print(redship.calc_weapon_mod(blueship))
