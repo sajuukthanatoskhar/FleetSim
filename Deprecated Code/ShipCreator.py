@@ -44,6 +44,9 @@ def destroy_Ship_Creator():
     w.destroy()
     w = None
 
+def handle_click(condition):
+    print("Hi {}".format(condition))
+
 class Ship_Creator:
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
@@ -212,6 +215,7 @@ class Ship_Creator:
         self.CancelButton.configure(pady="0")
         self.CancelButton.configure(text='''Cancel''')
         self.CancelButton.configure(width=55)
+        self.CancelButton.bind("<Button-1>", handle_click)
 
 if __name__ == '__main__':
     vp_start_gui()
