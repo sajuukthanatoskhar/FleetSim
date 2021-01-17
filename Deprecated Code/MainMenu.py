@@ -25,12 +25,5 @@ class main_menu_window():
     def battlefleets(self):
         print("Battle!!!")
 
-    def make_ship(self):
-        #for w in self.master.winfo_children():
-         #   w.configure(state="disabled")
-        create_Ship_Creator(self.master)
-        #for w in self.master.winfo_children():
-        #    w.configure(state="normal")
-
     def make_fleet(self):
         print("Make fleet")
