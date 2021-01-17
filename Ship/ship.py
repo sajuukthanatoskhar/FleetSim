@@ -70,7 +70,6 @@ class ship:
         :param z: starting z coordinate
         """
         self.ship_inf = ship_dict
-        self.hp = ship_dict['hp']['shield'] + ship_dict['hp']['armor'] + ship_dict['hp']['hull']
         self.dps = ship_dict['weaponDPS']
         self.targettingrange = ship_dict['maxTargetRange']
         self.speed = ship_dict['maxSpeed']  # this is not the base speed if there is an afterburner present
@@ -100,7 +99,7 @@ class ship:
         self.ship_armor = Ship.ship_health.Armor(ship_dict)
         self.ship_hull = Ship.ship_health.Hull(ship_dict)
         self.ship_capacitor = Ship.capacitor.capacitor(ship_dict)
-
+        self.hp = self.ship_shield.hp
         # Fleet Sim Related
         self.current_target = None
         self.damage_dealt_this_tick = None
@@ -152,7 +151,7 @@ class ship:
 
             spread = get_spread(weapon)  # check the fractional %tage of damage
             still_damaging = True
-            lower, upper, avg = self.calc_weapon_mod(test_value)  # use test value to indicate damage modifier
+            avg = self.calc_weapon_mod(test_value)  # use test value to indicate damage modifier
             damage_dealt = get_type_damage(weapon, avg)
 
             while still_damaging:
@@ -160,11 +159,11 @@ class ship:
                 Recursively deal damage to the ship until we run out of damage to process on shield/armor/hull or
                 the ship is dead
                 """
-                damage_this_round, damage_dealt, still_damaging = self.deal_damage(spread, damage_dealt,
-                                                                                   target, still_damaging)
+                damage_this_round, damage_dealt, still_damaging = self.deal_damage(spread, weapon,  damage_dealt, target, still_damaging)
                 self.damage_dealt_this_tick += damage_this_round
 
         if target.ship_hull.hp <= 0:
+            target.hp = 0
             print("*************%s destroyed **********************" % target)
 
     def calculate_location_3d_diff(self, target):
@@ -290,6 +289,12 @@ class ship:
             self.attack(target)
 
     def move_away_from(self, target):
+        """
+        Gets the ship to move away from a target
+        todo: should be a point in space
+        :param target:
+        :return:
+        """
         x, y, z = self.calculate_location_3d_diff(target)
         mag = np.array([x, y, z])
         mag = np.linalg.norm(mag)
@@ -336,7 +341,7 @@ class ship:
             status, remaining_damage = hp_component.modify_hp(raw_hp_damage)
             break
         try:
-            if status == -1 or target.ship_hull.hp <= 0:
+            if target.ship_hull.hp <= 0 or remaining_damage <= 0:
                 still_damaging = False
         except Exception as e:
             print(e)

@@ -17,12 +17,12 @@ class TestShield(TestCase):
 class TestHP_Object(TestCase):
     def test_modify_hp(self):
         tested_ship_shield.hp = tested_ship_shield.max_hp
-        self.assertEqual(tested_ship_shield.modify_hp(100), ship_health.status['damaged'])
+        self.assertEqual(tested_ship_shield.modify_hp(100)[0], ship_health.status['damaged'])
 
     def test_be_attacked(self):
         tested_ship_shield.hp = tested_ship_shield.max_hp
-        tested_ship_shield.be_attacked(shield_dict["weapons"])
-        self.assertAlmostEquals(169.125, tested_ship_shield.hp, 2)
+        tested_ship_shield.be_attacked(shield_dict["weapons"][0]["dps_spread"])
+        self.assertAlmostEquals(395, tested_ship_shield.hp, 2)
 
 
 class TestDamage_types(TestCase):

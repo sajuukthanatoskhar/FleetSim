@@ -114,7 +114,7 @@ class Fleet:
         for ships in self.ships:
             ships.current_target = self.currentprimary
             ships.main_attack_procedure(self.currentprimary)
-        if self.currentprimary.hp < 0:
+        if self.currentprimary.hp <= 0:
             self.currentprimary = None
 
     def attack_other_fleet(self, fleet, method):
@@ -169,21 +169,22 @@ class Fleet:
 
     def printstats(self):
         listy = []
-
+        import Ship
+        s: Ship.ship.ship
         for s in self.ships:
             if s.current_target == None:
                 print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
                     s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
-                    s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity))
+                    s.distance_from_target, s.damage_dealt_this_tick, s.angular_velocity))
                 listy.append(("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
                     s.name, self.name[:-1], s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, "None",
-                    s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity)))
+                    s.distance_from_target, s.damage_dealt_this_tick, s.angular_velocity)))
             else:
                 print("%-20s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
                 s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, s.current_target.name[:-1],
-                s.distance_from_target, s.damagedealt_this_tick,
+                s.distance_from_target, s.damage_dealt_this_tick,
                 s.angular_velocity))  # [:-1] is for the names.... why do these have /n's? why why why
                 listy.append(("%-30s %-10s %-10d %-5d %-5d %-5d %-10s %-25s %-20s %-15s %-25s" % (
                 s.name[:-1], self.name, s.hp, s.loc.x, s.loc.y, s.loc.z, s.is_anchor, s.current_target.name,
-                s.distance_from_target, s.damagedealt_this_tick, s.angular_velocity)))
+                s.distance_from_target, s.damage_dealt_this_tick, s.angular_velocity)))
         return listy

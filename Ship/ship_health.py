@@ -30,8 +30,9 @@ status = {
 }
 
 dict_damage_types = ["em", "therm", "kin", "exp"]
-class HP_Object:
 
+
+class HP_Object:
 
     def __init__(self, hp: int, resonance: dict):
         '''
@@ -43,10 +44,10 @@ class HP_Object:
         self.max_hp = hp
         self.hp = hp
         self.resistance = [  # value given is resonance (1-resistance value)
-            1-resonance["em"],
-            1-resonance["therm"],
-            1-resonance["kin"],
-            1-resonance["exp"]
+            1 - resonance["em"],
+            1 - resonance["therm"],
+            1 - resonance["kin"],
+            1 - resonance["exp"]
         ]
 
         self.resonance = resonance
@@ -60,7 +61,7 @@ class HP_Object:
         self.hp -= amount
         remaining_damage = 0
         if self.hp < 0:
-            remaining_damage = -1*(self.hp - amount)
+            remaining_damage = -1 * (self.hp - amount)
             self.hp = 0
             return status['depleted'], remaining_damage
         elif self.hp > self.max_hp:
@@ -79,12 +80,13 @@ class HP_Object:
             count += 1
         return total_damage
 
+
 class Shield(HP_Object):
     def __init__(self, shield_dict: dict):
         super().__init__(shield_dict['hp']["shield"],
                          shield_dict['resonance']['shield'])
         self.shield_leak = 0.25  # shield_dict['shield_leak'] # todo: assume 0.25
-        self.recharge_time = shield_dict['shieldrechargetime']/1000
+        self.recharge_time = shield_dict['shieldrechargetime'] / 1000
 
     def recharge_tick(self) -> float:
         '''
@@ -92,7 +94,8 @@ class Shield(HP_Object):
         '''
         shield_cap_ratio = (self.hp / self.max_hp)
         recharge_value = (10 * self.max_hp / self.recharge_time) * (math.sqrt(
-            shield_cap_ratio) - shield_cap_ratio)  # https://wiki.eveuniversity.org/Tanking#Understand_Shield_Recharge_Rate
+            shield_cap_ratio) - shield_cap_ratio)  # https://wiki.eveuniversity.org/Tanking
+        # #Understand_Shield_Recharge_Rate
         return recharge_value
 
 
@@ -104,5 +107,5 @@ class Armor(HP_Object):
 
 class Hull(HP_Object):
     def __init__(self, hull_dict):
-        super().__init__(hull_dict['hp'],
+        super().__init__(hull_dict['hp']['hull'],
                          hull_dict['resonance']['hull'])
