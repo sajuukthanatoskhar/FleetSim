@@ -44,6 +44,9 @@ def destroy_Ship_Creator():
     w.destroy()
     w = None
 
+def handle_click(condition):
+    print("Hi {}".format(condition))
+
 class Ship_Creator:
     def __init__(self, top=None):
         '''This class configures and populates the toplevel window.
@@ -55,7 +58,7 @@ class Ship_Creator:
         _ana2color = '#ececec' # Closest X11 color: 'gray92' 
 
         top.geometry("395x261+773+246")
-        top.title("Ship Creation/Edit")
+        top.title("Shipfolder Creation/Edit")
         top.configure(background="#d9d9d9")
 
         self.Label1 = tk.Label(top)
@@ -63,7 +66,7 @@ class Ship_Creator:
         self.Label1.configure(background="#d9d9d9")
         self.Label1.configure(disabledforeground="#a3a3a3")
         self.Label1.configure(foreground="#000000")
-        self.Label1.configure(text='''Name of Ship''')
+        self.Label1.configure(text='''Name of Shipfolder''')
 
         self.Label1_1 = tk.Label(top)
         self.Label1_1.place(relx=0.051, rely=0.23, height=21, width=78)
@@ -212,6 +215,7 @@ class Ship_Creator:
         self.CancelButton.configure(pady="0")
         self.CancelButton.configure(text='''Cancel''')
         self.CancelButton.configure(width=55)
+        self.CancelButton.bind("<Button-1>", handle_click)
 
 if __name__ == '__main__':
     vp_start_gui()

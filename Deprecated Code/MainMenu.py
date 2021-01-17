@@ -10,7 +10,7 @@ class main_menu_window():
         self.label = Label(master, text="This is our first GUI!")
         self.label.pack()
 
-        self.make_ship = Button(master, text="Make Ship", command=self.make_ship)
+        self.make_ship = Button(master, text="Make Shipfolder", command=self.make_ship)
         self.make_ship.pack()
 
         self.configure_fleet = Button(master, text="Configure fleets", command=self.make_fleet)
@@ -24,13 +24,6 @@ class main_menu_window():
 
     def battlefleets(self):
         print("Battle!!!")
-
-    def make_ship(self):
-        #for w in self.master.winfo_children():
-         #   w.configure(state="disabled")
-        create_Ship_Creator(self.master)
-        #for w in self.master.winfo_children():
-        #    w.configure(state="normal")
 
     def make_fleet(self):
         print("Make fleet")
