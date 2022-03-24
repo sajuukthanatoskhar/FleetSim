@@ -32,8 +32,8 @@ class capacitor:
         :return: status if the hp_object is fully_healed, depleted or damaged
         '''
         reflected = 0
-        if rep is True:
-            reflected = self.capacitor_damage(-1*amount)
+        if rep is True: # todo should be repairer
+            reflected = self.capacitor_damage(-1*amount)  # todo: not correct, should be repair
         else:
             self.capacitor_level -= self.capacitor_damage(amount)[0]
         if self.capacitor_level < 0:

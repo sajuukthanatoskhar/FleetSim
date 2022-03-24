@@ -41,6 +41,7 @@ class World:
         self.ships = []
         self.playersplaying = []
         self.fleet_capitulation_status = 0  # 0 is still active fleet, 1 is dead fleet
+        self.time_dilation = 1.0 # Delay between next eve sim second
 
     ''''''
 
@@ -163,7 +164,9 @@ class World:
             plt.ion()
             fig = plt.figure(figsize=(12, 8))
             ax = fig.add_subplot(111, projection='3d')
+
             self.sim_timer = 0
+
             while (True):
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
@@ -229,10 +232,12 @@ class World:
                         for shipd in singleplayerfleets.ships:
                             ax.scatter(shipd.loc.x, shipd.loc.y, shipd.loc.z, c=singleplayerfleets.color, marker=shipd.marker)
                 self.sim_timer += 1
-                plt.pause(0.1)
+
+                plt.pause(self.time_dilation)
                 plt.cla()
                 plt.draw()
-
+                plt.xlim([-100000.0,100000.0])
+                plt.ylim([-100000.0,100000.0])
 
                 # for players in self.playersplaying:
                 #     self.listenersock.sendto("End:Send p to continue".encode('UTF-8'), (players.address, int(players.port)))

@@ -93,7 +93,7 @@ class MyApp(ShowBase):
 
         ShowBase.__init__(self)
 
-        self.disable_mouse()
+
         self.camera.set_pos(0., -5., 2.)
         self.camera.look_at(0., 0., 0.)
 
@@ -113,8 +113,9 @@ class MyApp(ShowBase):
         self._mouse_start_pos = (0., 0.)
         self._mouse_end_pos = (0., 0.)
 
-        self.accept("mouse1", self.__start_region_draw)
-        self.accept("mouse1-up", self.__end_region_draw)
+        # self.accept("mouse1", self.__start_region_draw)
+        # self.accept("mouse1-up", self.__end_region_draw)
+
 
     def __start_region_draw(self):
 
@@ -261,4 +262,5 @@ class MyApp(ShowBase):
 
 
 app = MyApp()
+
 app.run()
