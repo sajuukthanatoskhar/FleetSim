@@ -1,6 +1,7 @@
 import unittest.mock
 
 import pytest
+from tests.errors_count_class import *
 
 import Shipfolder.ship_f
 
@@ -49,8 +50,8 @@ with open('ScorpionBursterScorp.ship', 'r') as bursterscorpf:
                          [(bursterscorp), (ship_dict)]
                          )
 def test_make_ship(name):
-    ship_to_be_tested = Shipfolder.ship_f.Shipfolder(name)
-    assert isinstance(ship_to_be_tested, Shipfolder.ship_f.Shipfolder)
+    ship_to_be_tested = Shipfolder.ship_f.Ship(name)
+    assert isinstance(ship_to_be_tested, Shipfolder.ship_f.Ship)
 
 
 @pytest.mark.skip
@@ -68,33 +69,32 @@ def test_verify_weapon():
 
 
 def test_attack():
-    shipa = Shipfolder.ship_f.Shipfolder((ship_dict))
-    shipb = Shipfolder.ship_f.Shipfolder(ship_dict, x=500, y=500, z=500)
+    shipa = Shipfolder.ship_f.Ship((ship_dict))
+    shipb = Shipfolder.ship_f.Ship(ship_dict, x=500, y=500, z=500)
 
     shipa.attack(shipb)
     assert True
 
 
 def test_orbit():
-    shipa = Shipfolder.ship_f.Shipfolder(ship_dict, 0, 0, 0)
-    shipb = Shipfolder.ship_f.Shipfolder(ship_dict, 0, 10000, 0)
+    shipa = Shipfolder.ship_f.Ship(ship_dict, 0, 0, 0)
+    shipb = Shipfolder.ship_f.Ship(ship_dict, 0, 10000, 0)
     shipa.speed = 500
     shipb.speed = 500
     shipa.orbit_around_target(shipb, 10000)  # should just orbit
     shipa.orbit_around_target(shipb, 10000)  # should just orbit
 
-    if round(shipa.loc.x) == 0 and round(shipa.loc.y) == 0:
+    if round(shipa.loc.x) == 0 and round(shipa.loc.y) == 0: # todo fixup the test success
         assert True
     else:
         assert False
 
 
 def test_move_to():
-    shipa = Shipfolder.ship_f.Shipfolder(ship_dict, 0, 0, 0)
-    shipb = Shipfolder.ship_f.Shipfolder(ship_dict, 0, 10000, 0)
+    shipa = Shipfolder.ship_f.Ship(ship_dict, 0, 0, 0)
+    shipb = Shipfolder.ship_f.Ship(ship_dict, 0, 10000, 0)
     shipa.speed = 500
     shipb.speed = 500
-
     assert True
 
 
@@ -151,3 +151,5 @@ def test_evasive_attack_procedure():
 @pytest.mark.skip
 def test_move_away_from():
     assert False
+
+

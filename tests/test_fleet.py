@@ -6,7 +6,7 @@ import Shipfolder.ship_health as shiphealth
 from tests.test_ship import ship_dict as shipdict
 
 
-tested_ship = ship.Shipfolder(shipdict)
+tested_ship = ship.Ship(shipdict)
 
 @pytest.fixture
 def make_fleet():

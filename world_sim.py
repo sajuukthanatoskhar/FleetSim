@@ -13,12 +13,20 @@ import threading
 import os
 import Shipfolder.ship_f
 import json
+from world_config import WorldStates
 
-
-
+# class World_Timer:
+#
 
 class World:
+    """
+    Defines the players, the ports, server
+    """
     def __init__(self, numplayers):
+        """
+        Initialises the world, number of players, ports and server particulars
+        :param numplayers:
+        """
         self.sim_timer = 0  # simulation ticker, it represents the global time scale
         self.UDP_port_no = 6789
         self.Sender_Port_No = 6790
@@ -33,6 +41,7 @@ class World:
         self.ships = []
         self.playersplaying = []
         self.fleet_capitulation_status = 0  # 0 is still active fleet, 1 is dead fleet
+        self.time_dilation = 1.0 # Delay between next eve sim second
 
     ''''''
 
@@ -41,6 +50,7 @@ class World:
         All fleets will move/anchor
         :return: None
         """
+        i: Fleet
         for i in range(0, len(self.fleets)):
             i.anchorup()
 
@@ -65,9 +75,9 @@ class World:
         """
         pass
 
-    def ship_allocation(self):
+    def ship_allocation(self) -> None:
         """
-        Allocates ships
+        Allocates ships to a fleet
         :return:
         """
         for i in self.playersplaying:
@@ -89,14 +99,14 @@ class World:
                 elif int(choice) == -2:
                     choice = -2
 
-    def worldstate(self, world_state_val):
-        if world_state_val == 0:
-            while world_state_val == 0:
+    def worldstate(self, world_state_val: int) -> int:
+        if world_state_val == WorldStates.preload_ips_players:
+            while world_state_val == WorldStates.preload_ips_players:
                 print("collecting players and IPs")
                 self.collect_ip_players()
                 if len(self.playersplaying) == self.Howmanyplayers:
-                    world_state_val = 1
-        if world_state_val == 1:
+                    world_state_val = WorldStates.player_allocation
+        if world_state_val == WorldStates.player_allocation:
             count = 0
             print("\nAllocating Fleets to players, please wait")
             for player in self.playersplaying:
@@ -109,11 +119,11 @@ class World:
                 if data == "ok":
                     count = 1 + count
             print("count = %s" % str(count))
-            world_state_val = 2
+            world_state_val = WorldStates.initialise_fleets
 
-        if world_state_val == 2:
+        if world_state_val == WorldStates.initialise_fleets:
             statechoice = -1
-            while (statechoice == -1):  # Printing out each player, IP and fleets
+            while statechoice == -1:  # Printing out each player, IP and fleets
                 print("%-30s %-20s %-50s" % ("Player Name", "Address", "Owned Fleets\n"))
                 for i in range(0, len(self.playersplaying)):
                     ownedshipslist = ""
@@ -124,8 +134,8 @@ class World:
 
                 self.ship_allocation()  # todo players need to get fleets.
                 statechoice = 0
-                world_state_val = 3
-        if world_state_val == 3:
+                world_state_val = WorldStates.load_fleets
+        if world_state_val == WorldStates.load_fleets:
 
             for player in self.playersplaying:
                 print("%s having fleets loaded...\n" % player.name)
@@ -154,7 +164,9 @@ class World:
             plt.ion()
             fig = plt.figure(figsize=(12, 8))
             ax = fig.add_subplot(111, projection='3d')
+
             self.sim_timer = 0
+
             while (True):
                 for players in self.playersplaying:
                     for singleplayerfleets in players.owned_fleets:
@@ -220,10 +232,12 @@ class World:
                         for shipd in singleplayerfleets.ships:
                             ax.scatter(shipd.loc.x, shipd.loc.y, shipd.loc.z, c=singleplayerfleets.color, marker=shipd.marker)
                 self.sim_timer += 1
-                plt.pause(0.1)
+
+                plt.pause(self.time_dilation)
                 plt.cla()
                 plt.draw()
-
+                plt.xlim([-100000.0,100000.0])
+                plt.ylim([-100000.0,100000.0])
 
                 # for players in self.playersplaying:
                 #     self.listenersock.sendto("End:Send p to continue".encode('UTF-8'), (players.address, int(players.port)))
@@ -241,7 +255,7 @@ class World:
 
         return world_state_val
 
-    def printing_fleet_ships(self):
+    def printing_fleet_ships(self) -> None:
         for players in self.playersplaying:
             print("Sim Timer --> {}".format(self.sim_timer))
             line = Shipfolder.ship_f.printstatsheader()
@@ -261,7 +275,7 @@ class World:
                     print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
                         players.name, singleplayerfleets.name))
 
-    def all_fleets_in_world_attack(self):
+    def all_fleets_in_world_attack(self) -> None:
         for players in self.playersplaying:
             for singleplayerfleets in players.owned_fleets:
                 if singleplayerfleets.fleet_capitulation_status == 0:
@@ -270,7 +284,7 @@ class World:
                     print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
                         players.name, singleplayerfleets.name))
 
-    def move_ships_in_world(self):
+    def move_ships_in_world(self) -> None:
         """
         Moves all the ships in the world to where they want to be
         :return:
@@ -284,13 +298,11 @@ class World:
                     print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
                         players.name, singleplayerfleets.name))
 
-    def sendfleetdata(self, type, player):
-        if type == "Anchor select":
-            pass
-        if type == "big list":
-            pass
-
-    def collect_ip_players(self):
+    def collect_ip_players(self) -> None:
+        """
+        Collects all players and their ip's
+        :return:
+        """
         data, addr = self.serversock.recvfrom(1024)
         data = data.decode("utf-8")
         if "fleetplayer" in data:
@@ -298,26 +310,12 @@ class World:
             massdata = data.split(',')
             self.playersplaying.append(Players_c(str(massdata[1]), str(addr), str(massdata[2])))
             for i in massdata:
-                print(i)
+                print("{}".format(i))
 
-    def get_names_players(self):
-        pass
-
-    def get_spawns(self):
-        pass
-
-    '''
-    Print out all fleet information
-    Give players choices
-    wait for players to choose what to do
-    Continue on with simulation
-    '''
-
-    def update_fleet_information(self):
-        pass
-
-    def make_new_ship_spec(self) -> dict:
+    @staticmethod
+    def make_new_ship_spec() -> dict:
         import ast
+        ship_dict = {}
         try:
             ship_dict = ast.literal_eval(
                 input("\nCopy and Paste the pyfa EFS (Fit -> Copy To -> Select a Format (EFS) -> Ok)"))
@@ -459,6 +457,13 @@ class World:
                     str(count), individualships.name[:-1], players.name, str(individualships.loc.x),
                     str(individualships.loc.y), str(individualships.loc.z), str(hex(id(individualships))))
         return listofships
+
+    def validate_pyfa_EFS(self):
+        """
+        Validates PYFA EFS
+        :return:
+        """
+        pass
 
 
 def printMMD():
