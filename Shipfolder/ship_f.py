@@ -218,8 +218,12 @@ class Ship:
             a = target.loc.find_distance_for_translation()
             # Use cosine rule to find solution to angle A
             # Cosine rule is used and is the following equation a**2 = b**2 + c**2 -2bc
-
-            sum = (a ** 2 - b ** 2 - c ** 2) / (-2 * b * c)
+            try:
+                sum = (a ** 2 - b ** 2 - c ** 2) / (-2 * b * c)
+            except ZeroDivisionError:
+                print("At 0m")
+                sum = 0
+                #todo: wrong, but its better than nothing
 
             if sum > 1 and sum < 1.1:
                 sum = 1

@@ -4,7 +4,7 @@ import codecs
 import random
 import sys
 import os
-
+from world_config import CommunicationResponses
 
 def noanchor(data):
     count = 0
@@ -38,6 +38,8 @@ def noprimary(data):
                 print(e)
     return choice
 
+from player_config import PlayerConfiguration
+
 
 if __name__ == "__main__":
     hostip = "127.0.0.1"
@@ -56,10 +58,12 @@ if __name__ == "__main__":
     choice = -1
     print("ReturnACK : " + str(data))
     if data != None:
-        playerclient_toserver.sendto("ok".encode("utf-8"), (hostip, clientport))
+        playerclient_toserver.sendto(CommunicationResponses.PlayerClient_To_Server_ExistenceACK.encode("utf-8"),
+                                     (hostip, clientport)
+                                     )
     else:
-        print("Error")
-    while (choice != -2):
+        raise ConnectionError(f"Connection Error when attempting to connect to server\nIP: {hostip}\nPort: {hostport} ")
+    while choice != -2: # todo: make it retry a couple of times?
         data, addr = playerlistenerclient.recvfrom(1024)
         choice = input(data.decode('utf-8'))
         playerclient_toserver.sendto(choice.encode("utf-8"), (hostip, clientport))

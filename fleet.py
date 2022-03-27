@@ -118,13 +118,24 @@ class Fleet:
             self.attack(target)
 
     def attack_primary(self):
-        for ships in self.ships:
-            ships.current_target = self.currentprimary
-            ships.main_attack_procedure(self.currentprimary)
+        """
+        All ships in the fleet attack their target
+        :return:
+        """
+        for ship in self.ships:
+            ship.current_target = self.currentprimary
+            ship.main_attack_procedure(self.currentprimary)
         if self.currentprimary.ship_hull.hp <= 0:
             self.currentprimary = None
 
     def attack_other_fleet(self, fleet, method):
+        """
+        Not Implemented any where
+        todo: use callable to set not fleet, but ship behaviour, include manual/none
+        :param fleet:
+        :param method:
+        :return:
+        """
         if method == "Basic Anchor and attack":
 
             if (self.currenttargetstatus != 1):  # If our ship is not alive
@@ -143,7 +154,7 @@ class Fleet:
         if method == "Evasive":
             pass
         if method == "Break Anchor":
-            pass  # oh jesus please help me oh lawd take the wheel
+            pass
 
         # Enemy Fleet
 
@@ -158,6 +169,10 @@ class Fleet:
         # for s in self.ships:
 
     def choosenewanchor(self):
+        """
+        Chooses a new anchor for the fleet
+        :return:
+        """
         hp = []
         for i in range(0, len(self.ships)):
             hp.append(self.ships[i].hp)
@@ -169,7 +184,7 @@ class Fleet:
             if fleet.ships[i].ship_hull.hp <= 0:
                 if fleet.currentanchor == fleet.ships[i]:
                     fleet.choosenewanchor()
-                print("%s Shipfolder Deleted" % str(fleet.ships[i].name[:-1]))
+                print("%s Ship Destroyed" % str(fleet.ships[i].name[:-1]))
                 del fleet.ships[i]
                 return 1
         return 0

@@ -1,16 +1,23 @@
 import fleet
 
+class PlayerState:
+    AllFleetCapitulated = 0
+    FleetsActive = 1
+    NotInBattleYet = 2
 
 class Players_c():
     """
-
+    Class for players, their owned fleets, their state based off of their Fleets' states and connection details
     """
+
     def __init__(self, name, addr, port):
         self.address = addr.split(',')
         self.address = self.address[0][2:-1]
         self.owned_fleets = []
         self.name = name
         self.port = port
+        self.alliance = None
+        self.player_state = PlayerState.FleetsActive
         print("\nMade player! Name " + self.name + " address " + self.address)
 
     def add_fleet(self, fleet: fleet.Fleet):
