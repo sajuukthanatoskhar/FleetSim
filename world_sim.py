@@ -1,5 +1,8 @@
+import collections
 import math
+from typing import List
 
+import fleet
 from fleet import *
 import socket
 from players import *
@@ -13,7 +16,10 @@ import threading
 import os
 import Shipfolder.ship_f
 import json
-from world_config import WorldStates
+from world_config import WorldStates, FleetStates, WorldConfig, MenuMessages
+
+DEBUG = False
+
 
 # class World_Timer:
 #
@@ -22,11 +28,14 @@ class World:
     """
     Defines the players, the ports, server
     """
+
     def __init__(self, numplayers):
         """
         Initialises the world, number of players, ports and server particulars
-        :param numplayers:
+        :param numplayers: Number of players who are playing
+        :param time_dilation: Delay between next eve sim second, 1.0 is one real time second per eve tick, 0.1 is 10 eve seconds for one real time second
         """
+        self.capitulationstatus = 0
         self.sim_timer = 0  # simulation ticker, it represents the global time scale
         self.UDP_port_no = 6789
         self.Sender_Port_No = 6790
@@ -39,11 +48,34 @@ class World:
 
         self.fleets = []
         self.ships = []
-        self.playersplaying = []
-        self.fleet_capitulation_status = 0  # 0 is still active fleet, 1 is dead fleet
-        self.time_dilation = 1.0 # Delay between next eve sim second
+        self.playersplaying: List[Players_c] = []
+        self.fleet_capitulation_status = FleetStates.fleet_combat_effective  # Look to Fleetstates
+        self.time_dilation = WorldConfig.time_dilation_factor
 
-    ''''''
+    def check_fleet_status(self) -> None:
+        """
+        Checks if the fleet is still active or not
+        :return: None
+        """
+        for players in self.playersplaying:
+            for singleplayerfleets in players.owned_fleets:
+                if singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_combat_effective:
+                    processing_dead = 1
+                    while processing_dead:
+                        processing_dead = singleplayerfleets.checkenemyfleetdead(singleplayerfleets)
+                        if not singleplayerfleets.ships:
+                            singleplayerfleets.fleet_capitulation_status = FleetStates.fleet_capitulated
+                            print(
+                                f"Status Update: Player {players.name}: Fleet {singleplayerfleets.name} -- Fleet capitulated")
+
+                elif singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_capitulated:
+                    print(f"Status Update: Player {players.name}: Fleet {singleplayerfleets.name} -- Fleet capitulated")
+
+            playerfleet: fleet.Fleet
+            # everything must be dead from that players fleet or capitulated
+            if not any([playerfleet.fleet_capitulation_status for playerfleet in players.owned_fleets]):
+                players.player_state = PlayerState.AllFleetCapitulated
+                self.message_to_all_players(f"{players} has no more fleets!")
 
     def anchor_movephase(self) -> None:
         """
@@ -75,6 +107,38 @@ class World:
         """
         pass
 
+    def load_fleets(self):
+        """
+        Loads the fleet up for each players
+        :return:
+        """
+        for player in self.playersplaying:
+            print("%s having fleets loaded...\n" % player.name)
+            self.loadplayerfleets(player)
+        print("Loading Players 100 km from each other")
+
+        for count, players in enumerate(self.playersplaying):
+            for singleplayerfleets in players.owned_fleets:
+                self.spawn_player_ship(count, singleplayerfleets)
+                singleplayerfleets.fleet_capitulation_status = FleetStates.fleet_combat_effective
+                self.setanchorforplayer_fleet(players, singleplayerfleets)
+                # singleplayerfleets.printstats()
+            print(count)
+        print("loaded players")
+
+    def spawn_player_ship(self, count: int, singleplayerfleets: Fleet):
+        """
+        Spawns the player's fleet and places them in position
+        :param count:
+        :param singleplayerfleets:
+        :return:
+        """
+        for spawning_ship in singleplayerfleets.ships:  # spawning ship is the ship being spawned in
+            spawning_ship.loc.x = 100000 * math.cos(3.14 * count / len(self.playersplaying)) + random.randint(
+                -3, 3)
+            spawning_ship.loc.y = 0 + 2500 * random.randint(-6, 6)
+            spawning_ship.loc.z = 0 + 2500 * random.randint(-6, 6)
+
     def ship_allocation(self) -> None:
         """
         Allocates ships to a fleet
@@ -100,17 +164,21 @@ class World:
                     choice = -2
 
     def worldstate(self, world_state_val: int) -> int:
+        """
+
+        :param world_state_val:
+        :return:
+        """
         if world_state_val == WorldStates.preload_ips_players:
             while world_state_val == WorldStates.preload_ips_players:
-                print("collecting players and IPs")
+                print("**** Collecting players and IPs ****")
                 self.collect_ip_players()
                 if len(self.playersplaying) == self.Howmanyplayers:
                     world_state_val = WorldStates.player_allocation
         if world_state_val == WorldStates.player_allocation:
             count = 0
-            print("\nAllocating Fleets to players, please wait")
+            print("**** Allocating Fleets to players, please wait ****")
             for player in self.playersplaying:
-                print(player.name)
                 playerreceived = player.name
                 print(player.name + " " + player.address + " " + player.port)
                 self.listenersock.sendto(playerreceived.encode("utf-8"), (player.address, int(player.port)))
@@ -118,7 +186,7 @@ class World:
                 data = data.decode('utf-8')
                 if data == "ok":
                     count = 1 + count
-            print("count = %s" % str(count))
+            print(f"Player Count = {count}")
             world_state_val = WorldStates.initialise_fleets
 
         if world_state_val == WorldStates.initialise_fleets:
@@ -130,137 +198,108 @@ class World:
                     for j in range(0, len(self.playersplaying[i].owned_fleets)):
                         ownedshipslist = ownedshipslist + "," + self.playersplaying[i].owned_fleets[j]
                     print("%-30s %-20s %-50s" % (
-                    self.playersplaying[i].name, self.playersplaying[i].address, str(ownedshipslist)))
+                        self.playersplaying[i].name, self.playersplaying[i].address, str(ownedshipslist)))
 
-                self.ship_allocation()  # todo players need to get fleets.
+                self.ship_allocation()
                 statechoice = 0
-                world_state_val = WorldStates.load_fleets
-        if world_state_val == WorldStates.load_fleets:
-
-            for player in self.playersplaying:
-                print("%s having fleets loaded...\n" % player.name)
-                self.loadplayerfleets(player)
-            print("Loading Players 100 km from each other")
-
-            capitulationstatus = 0
-            count = 0
-            for players in self.playersplaying:  # todo: put in function
-                for singleplayerfleets in players.owned_fleets:
-                    for shippyships in singleplayerfleets.ships:  # I can't remember if there is a naming conflict for any of these
-                        shippyships.loc.x = 100000 * math.cos(3.14 * count / len(self.playersplaying)) + random.randint(
-                            -3, 3)
-                        shippyships.loc.y = 0 + 2500 * random.randint(-6, 6)
-                        shippyships.loc.z = 0 + 2500 * random.randint(-6, 6)
-                    self.setanchorforplayer_fleet(players, singleplayerfleets)
-                    # singleplayerfleets.printstats()
-                count += 1
-                print(count)
-
-            # todo: then after the loading, they need to be placed on the field, given an anchor
-
-            # todo: we do battle ehre, all players should have their fleets at this point.   The word needs to set up a battle arena .
-            # todo: need anchor for
-            print("loaded players")
+                world_state_val = WorldStates.Fleet_Combat_State
+        if world_state_val == WorldStates.Fleet_Combat_State:
+            self.load_fleets()
             plt.ion()
             fig = plt.figure(figsize=(12, 8))
             ax = fig.add_subplot(111, projection='3d')
 
             self.sim_timer = 0
 
-            while (True):
-                for players in self.playersplaying:
-                    for singleplayerfleets in players.owned_fleets:
-                        if singleplayerfleets.fleet_capitulation_status == 0:
-                            if singleplayerfleets.currentprimary == None or singleplayerfleets.currentanchor == None:
-                                if singleplayerfleets.currentanchor == None:
-                                    message = "NoAnchor:%s Anchor - None\n%s" % (
-                                    singleplayerfleets.name, singleplayerfleets.listallfleetmembers())
-                                    self.listenersock.sendto(message.encode("utf-8"),
-                                                             (players.address, int(players.port)))
+            while self.IsActivePlayers():
+                """
+                Check if there are active players still"""
+                self.fleet_combat_check_all_players_fleets()
 
-                                    self.message_to_all_players("Pausing Game for Anchor Change")
-                                    data, addr = self.serversock.recvfrom(1024)
-                                if singleplayerfleets.currentprimary == None:
-                                    message = "NoPrimary:%s Primary - None\n%s" % (
-                                    singleplayerfleets.name, self.listofvalidprimaries())
-                                    self.listenersock.sendto(message.encode("utf-8"),
-                                                             (players.address, int(players.port)))
-                                    self.message_to_all_players("Pausing Game for Primary Change for %s" % players)
-                                    data, addr = self.serversock.recvfrom(1024)
-                                    while data.decode() == 'p':  # todo: check for hex address
-                                        data, addr = self.serversock.recvfrom(1024)
-                                    print("%s" % data)
-                                    singleplayerfleets.currentprimary = findshipbymemaddress(singleplayerfleets,
-                                                                                             data.decode())
-                                    singleplayerfleets.currentanchor.current_target = singleplayerfleets.currentprimary
-                                    # singleplayerfleets.currentprimary =
-                                    # data, address = self.serversock.recvfrom(1024)
-
-
-                        elif singleplayerfleets.fleet_capitulation_status == 1:
-                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
-                            players.name, singleplayerfleets.name))
-
-                # For loop for moving ships and anchors#todo: check code
                 self.move_ships_in_world()
-                # For loop for attacking ships #todo: check code
                 self.all_fleets_in_world_attack()
-
-                # For loop for printing fleet ships #todo: check code
                 self.printing_fleet_ships()
+                self.check_fleet_status()
+                self.Update_GUI_Interface_And_Ship_Positions(ax)
 
-                # if ships from a fleet are dead - set capitulation status
-                for players in self.playersplaying:
-                    for singleplayerfleets in players.owned_fleets:
-                        if singleplayerfleets.fleet_capitulation_status == 0:
-                            processing_dead = 1
-                            while (processing_dead):
-                                processing_dead = singleplayerfleets.checkenemyfleetdead(singleplayerfleets)
-                                if not singleplayerfleets.ships:
-                                    singleplayerfleets.fleet_capitulation_status = 1
-                                    print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
-                                        players.name, singleplayerfleets.name))
-                                    return 2
-                        elif singleplayerfleets.fleet_capitulation_status == 1:
-                            print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
-                            players.name, singleplayerfleets.name))
-                            # todo: remove fleet
-                            return 2
+                # if len([player.player_state for player in self.playersplaying if
+                #         player.player_state == PlayerState.FleetsActive]) <= 1:
 
-                for players in self.playersplaying:
-                    for singleplayerfleets in players.owned_fleets:
-                        for shipd in singleplayerfleets.ships:
-                            ax.scatter(shipd.loc.x, shipd.loc.y, shipd.loc.z, c=singleplayerfleets.color, marker=shipd.marker)
-                self.sim_timer += 1
+                world_state_val = self.IsActivePlayers()
 
-                plt.pause(self.time_dilation)
-                plt.cla()
-                plt.draw()
-                plt.xlim([-100000.0,100000.0])
-                plt.ylim([-100000.0,100000.0])
+                if DEBUG:
+                    for players in self.playersplaying:
+                        self.listenersock.sendto("End:Send p to continue".encode('UTF-8'),
+                                                 (players.address, int(players.port)))
+                        data, addr = self.serversock.recvfrom(1024)
 
-                # for players in self.playersplaying:
-                #     self.listenersock.sendto("End:Send p to continue".encode('UTF-8'), (players.address, int(players.port)))
-                #     data, addr = self.serversock.recvfrom(1024)
-
-                # todo: do things
-                # print("loaded Fleets, awaiting battle")
-        '''
-        #todo:eed to fill in the following
-        allow players to set anchors
-        allow players to move fleets
-        allow players to toggle attacking
-        allow players to set primary
-        '''
+                if world_state_val == WorldStates.end_of_fight:
+                    break
 
         return world_state_val
+
+    def fleet_combat_check_all_players_fleets(self):
+        for players in self.playersplaying:
+            self.fleet_combat_check_player_fleet(players)
+
+    def fleet_combat_check_player_fleet(self, players) -> None:
+        """
+        Checks that the status of all fleets of a player are checked
+        :return None:
+        """
+        for singleplayerfleets in players.owned_fleets:
+            if singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_combat_effective:
+                if singleplayerfleets.currentprimary is None or singleplayerfleets.currentanchor == None:
+                    if singleplayerfleets.currentanchor is None:
+                        message = f"NoAnchor:{singleplayerfleets.name} Anchor - None\n{singleplayerfleets.listallfleetmembers()}"
+                        self.listenersock.sendto(message.encode("utf-8"),
+                                                 (players.address, int(players.port)))
+                        self.message_to_all_players("Pausing Game for Anchor Change")
+                        data, addr = self.serversock.recvfrom(1024)
+                    if singleplayerfleets.currentprimary is None:
+                        message = f"NoPrimary:{singleplayerfleets.name} Primary - None\n" \
+                                  f"{self.listofvalidprimaries(singleplayerfleets)}"
+                        self.listenersock.sendto(message.encode("utf-8"),
+                                                 (players.address, int(players.port)))
+                        self.message_to_all_players("Pausing Game for Primary Change for %s" % players)
+                        data, addr = self.serversock.recvfrom(1024)
+                        while data.decode() == 'p':  # todo: check for hex address
+                            data, addr = self.serversock.recvfrom(1024)
+                        print("%s" % data)
+                        singleplayerfleets.currentprimary = findshipbymemaddress(singleplayerfleets,
+                                                                                 data.decode())
+                        singleplayerfleets.currentanchor.current_target = singleplayerfleets.currentprimary
+
+
+
+            elif singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_capitulated:
+                print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
+                    players.name, singleplayerfleets.name))
+
+    def Update_GUI_Interface_And_Ship_Positions(self, ax):
+        """
+        Updates positions on 3D Interface
+        :param ax:
+        :return None:
+        """
+        for players in self.playersplaying:
+            for singleplayerfleets in players.owned_fleets:
+                for shipd in singleplayerfleets.ships:
+                    ax.scatter(shipd.loc.x, shipd.loc.y, shipd.loc.z, c=singleplayerfleets.color, marker=shipd.marker)
+        self.sim_timer += 1
+        plt.pause(self.time_dilation)
+        plt.cla()
+        plt.xlim([-100000.0, 100000.0])
+        plt.ylim([-100000.0, 100000.0])
+        plt.draw()
+
 
     def printing_fleet_ships(self) -> None:
         for players in self.playersplaying:
             print("Sim Timer --> {}".format(self.sim_timer))
             line = Shipfolder.ship_f.printstatsheader()
             for singleplayerfleets in players.owned_fleets:
-                if singleplayerfleets.fleet_capitulation_status == 0:
+                if singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_combat_effective:
                     i: Shipfolder.ship_f.Shipfolder
                     for i in singleplayerfleets.ships:
                         if i.damage_dealt_this_tick > 0:
@@ -271,16 +310,16 @@ class World:
                     listy = singleplayerfleets.printstats()
                     for i in range(0, len(listy)):
                         self.listenersock.sendto(listy[i].encode('UTF-8'), (players.address, int(players.port)))
-                elif singleplayerfleets.fleet_capitulation_status == 1:
+                elif singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_capitulated:
                     print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
                         players.name, singleplayerfleets.name))
 
     def all_fleets_in_world_attack(self) -> None:
         for players in self.playersplaying:
             for singleplayerfleets in players.owned_fleets:
-                if singleplayerfleets.fleet_capitulation_status == 0:
+                if singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_combat_effective:
                     singleplayerfleets.attack_primary()
-                elif singleplayerfleets.fleet_capitulation_status == 1:
+                elif singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_capitulated:
                     print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
                         players.name, singleplayerfleets.name))
 
@@ -291,10 +330,10 @@ class World:
         """
         for players in self.playersplaying:
             for singleplayerfleets in players.owned_fleets:
-                if singleplayerfleets.fleet_capitulation_status == 0:
+                if singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_combat_effective:
                     if (len(singleplayerfleets.ships)) > 0:
                         singleplayerfleets.anchorup()
-                elif singleplayerfleets.fleet_capitulation_status == 1:
+                elif singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_capitulated:
                     print("Status Update: Player %s: Fleet %s -- Fleet capitulated" % (
                         players.name, singleplayerfleets.name))
 
@@ -345,7 +384,7 @@ class World:
 
                     while (int(choice) <= -1 or int(choice) >= len(shiplist) - 1):
                         print("%15s\t%10s\t%10s\t%10s\t%10s\t%10s" % (
-                        "Shipfolder Name", "HP", "Target Range", "Max Speed", "Signature", "Turret"))
+                            "Ship Name", "HP", "Target Range", "Max Speed", "Signature", "Turret"))
                         for i in shiplist:
                             filet = open(i, 'r')
                             content = filet.readlines()
@@ -434,28 +473,40 @@ class World:
             count += 1
 
     def setanchorforplayer_fleet(self, players, singleplayerfleets):
-        setanchormsg = "%s is being requested to select an anchor..." % players.name
+        setanchormsg = f"{players.name} is being requested to select an anchor..."
         self.message_to_all_players(setanchormsg)
         singleplayerfleets.choosenewanchor()
 
-    def message_to_all_players(self, setanchormsg):
+    def message_to_all_players(self, setanchormsg: str):
+        """
+        Messages all players
+        :param setanchormsg:
+        :return:
+        """
         for playerstobemessage in self.playersplaying:
             self.listenersock.sendto(setanchormsg.encode("utf-8"),
                                      (playerstobemessage.address, int(playerstobemessage.port)))
 
-    # We list the ships and the ship object addresses, because Sajuuk couldn't think of a quicker way to deal with unique ids.
-    # Bare in mind, that there is a list of all ships in the world.  This list is not updated ever.
-    def listofvalidprimaries(self):
+    def listofvalidprimaries(self, player=None):
+        """
+        The ships, their addresses are located printed via here.  This currently is bugged
+        Bare in mind, that there is a list of all ships in the world.  This list is not updated ever.
+        :param: This is the player that hasn't got a primary for their fleet
+        :return: a list of ships todo: like wtf is this - could just put this in a list of list
+        """
         # we want player,distance,shiptype
         count = 0
         listofships = ""
+
         for players in self.playersplaying:
+            if players == player:
+                continue
             for singleplayerfleets in players.owned_fleets:
                 for individualships in singleplayerfleets.ships:
                     # print("%s %s %s %s %s" %(str(count), individualships.name,str(individualships.loc.x),str(individualships.loc.y),str(individualships.loc.z)))
                     listofships += "%s %s %s %s %s %s %s\n" % (
-                    str(count), individualships.name[:-1], players.name, str(individualships.loc.x),
-                    str(individualships.loc.y), str(individualships.loc.z), str(hex(id(individualships))))
+                        str(count), individualships.name[:-1], players.name, str(individualships.loc.x),
+                        str(individualships.loc.y), str(individualships.loc.z), str(hex(id(individualships))))
         return listofships
 
     def validate_pyfa_EFS(self):
@@ -465,6 +516,23 @@ class World:
         """
         pass
 
+    def IsActivePlayers(self):
+        """Gets all active fleets for each player, maybe move to player class"""
+        player : Players_c
+        player_fleet : Fleet
+        for player in self.playersplaying:
+            fleetstatuses = [player_fleet.fleet_capitulation_status for player_fleet in player.owned_fleets]
+            if FleetStates.fleet_combat_effective in fleetstatuses:
+                player.player_state = PlayerState.FleetsActive
+            else:
+                player.player_state = PlayerState.AllFleetCapitulated
+
+        players_states = collections.Counter([activeplayers.player_state for activeplayers in self.playersplaying])
+
+        if players_states[PlayerState.FleetsActive] < 2:
+                return False
+        else:
+            return True
 
 def printMMD():
     print("                                                          .-:-°\n\
@@ -538,13 +606,8 @@ if __name__ == "__main__":
 
         if menu_state == '2':
             state = main_world.worldstate(state)
-            if state == 2:
-                print("Combat Ended!\n")
-            else:
-                print("Error! :o \n")
+            print(MenuMessages.menu_fleetcombat[f'{state}'])
             state = 0
-
-
 
         if menu_state == '3':
             break

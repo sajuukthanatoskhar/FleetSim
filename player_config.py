@@ -1,0 +1,2 @@
+class PlayerConfiguration:
+    pass
