@@ -1,7 +1,8 @@
 import collections
+import inspect
 import math
 from typing import List
-
+import EventLogger.EventLogger as EventLogger
 import fleet
 from fleet import *
 import socket
@@ -45,7 +46,7 @@ class World:
         self.remoteip = "192.168.178.22"
         self.listenersock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.Howmanyplayers = numplayers
-
+        self.EventLogger = EventLogger.eventlogger()
         self.fleets = []
         self.ships = []
         self.playersplaying: List[Players_c] = []
@@ -65,17 +66,19 @@ class World:
                         processing_dead = singleplayerfleets.checkenemyfleetdead(singleplayerfleets)
                         if not singleplayerfleets.ships:
                             singleplayerfleets.fleet_capitulation_status = FleetStates.fleet_capitulated
+                            self.EventLogger.add_event([str(inspect.currentframe()), "Fleet Capitulated", players.name, singleplayerfleets.name, "Capitulated", "No Ships"])
                             print(
                                 f"Status Update: Player {players.name}: Fleet {singleplayerfleets.name} -- Fleet capitulated")
 
                 elif singleplayerfleets.fleet_capitulation_status == FleetStates.fleet_capitulated:
                     print(f"Status Update: Player {players.name}: Fleet {singleplayerfleets.name} -- Fleet capitulated")
-
+                    self.EventLogger.add_event([str(inspect.currentframe()), "Fleet Capitulated", players.name, singleplayerfleets.name, "Capitulated", "Status Declaration"])
             playerfleet: fleet.Fleet
             # everything must be dead from that players fleet or capitulated
             if not any([playerfleet.fleet_capitulation_status for playerfleet in players.owned_fleets]):
                 players.player_state = PlayerState.AllFleetCapitulated
                 self.message_to_all_players(f"{players} has no more fleets!")
+                self.EventLogger.add_event([str(inspect.currentframe()), "Public Message to all players", players.name, "Capitulated", "No More fleets"])
 
     def anchor_movephase(self) -> None:
         """
@@ -115,16 +118,21 @@ class World:
         for player in self.playersplaying:
             print("%s having fleets loaded...\n" % player.name)
             self.loadplayerfleets(player)
+            self.EventLogger.add_event([str(inspect.currentframe()), f"Loading up Player {player}",
+                                       f"{player.name} -> {player.name}"])
         print("Loading Players 100 km from each other")
 
         for count, players in enumerate(self.playersplaying):
             for singleplayerfleets in players.owned_fleets:
                 self.spawn_player_ship(count, singleplayerfleets)
                 singleplayerfleets.fleet_capitulation_status = FleetStates.fleet_combat_effective
+                self.EventLogger.add_event([str(inspect.currentframe()), "Adding and setting up fleet",
+                                           f"{player.name} -> {singleplayerfleets.name}"])
                 self.setanchorforplayer_fleet(players, singleplayerfleets)
                 # singleplayerfleets.printstats()
             print(count)
         print("loaded players")
+        self.EventLogger.add_event([str(inspect.currentframe()), "all Players Loaded"])
 
     def spawn_player_ship(self, count: int, singleplayerfleets: Fleet):
         """
@@ -138,6 +146,7 @@ class World:
                 -3, 3)
             spawning_ship.loc.y = 0 + 2500 * random.randint(-6, 6)
             spawning_ship.loc.z = 0 + 2500 * random.randint(-6, 6)
+        self.EventLogger.add_event([str(inspect.currentframe()), "Ships setup for fleet", f"{singleplayerfleets.name}"])
 
     def ship_allocation(self) -> None:
         """
@@ -160,6 +169,7 @@ class World:
                 print(data)
                 if int(choice) > -1 and int(choice) < len(fleetchoices):
                     i.add_fleet(fleetchoices[choice])
+                    self.EventLogger.add_event([str(inspect.currentframe()), f"Fleet added by {i.name}", f"{fleetchoices[choice]}"])
                 elif int(choice) == -2:
                     choice = -2
 
@@ -169,12 +179,15 @@ class World:
         :param world_state_val:
         :return:
         """
+        self.EventLogger.add_event([str(inspect.currentframe()), "Entering Battle simulator with World State", f"{world_state_val}"])
         if world_state_val == WorldStates.preload_ips_players:
             while world_state_val == WorldStates.preload_ips_players:
                 print("**** Collecting players and IPs ****")
                 self.collect_ip_players()
                 if len(self.playersplaying) == self.Howmanyplayers:
                     world_state_val = WorldStates.player_allocation
+                    self.EventLogger.add_event([str(inspect.currentframe()), "World State changed", f"{world_state_val}"])
+
         if world_state_val == WorldStates.player_allocation:
             count = 0
             print("**** Allocating Fleets to players, please wait ****")
@@ -187,7 +200,10 @@ class World:
                 if data == "ok":
                     count = 1 + count
             print(f"Player Count = {count}")
+            self.EventLogger.add_event([str(inspect.currentframe()), "Player Count Confirmed", f"{count}"])
+
             world_state_val = WorldStates.initialise_fleets
+            self.EventLogger.add_event([str(inspect.currentframe()), "World State changed", f"{world_state_val}"])
 
         if world_state_val == WorldStates.initialise_fleets:
             statechoice = -1
@@ -203,8 +219,10 @@ class World:
                 self.ship_allocation()
                 statechoice = 0
                 world_state_val = WorldStates.Fleet_Combat_State
+                self.EventLogger.add_event([str(inspect.currentframe()), "World State changed", f"{world_state_val}"])
         if world_state_val == WorldStates.Fleet_Combat_State:
             self.load_fleets()
+            self.EventLogger.add_event([str(inspect.currentframe()), "Public Message to all players"])
             plt.ion()
             fig = plt.figure(figsize=(12, 8))
             ax = fig.add_subplot(111, projection='3d')
@@ -234,6 +252,10 @@ class World:
                         data, addr = self.serversock.recvfrom(1024)
 
                 if world_state_val == WorldStates.end_of_fight:
+                    self.EventLogger.add_event([str(inspect.currentframe()), "End of Fight"])
+                    self.EventLogger.finish_log()
+
+
                     break
 
         return world_state_val
@@ -350,6 +372,8 @@ class World:
             self.playersplaying.append(Players_c(str(massdata[1]), str(addr), str(massdata[2])))
             for i in massdata:
                 print("{}".format(i))
+        self.EventLogger.add_event([str(inspect.currentframe()), "Player has entered", f"{self.playersplaying[-1].name}",
+                                    f"{self.playersplaying[-1].address}", f"{self.playersplaying[-1].port}"])
 
     @staticmethod
     def make_new_ship_spec() -> dict:
@@ -595,7 +619,7 @@ if __name__ == "__main__":
     main_world = World(2)
     state = 0
     printMMD()
-    while (True):
+    while True:
         menu_state = input("\n\nTEST Alliance Fleet Simulator\n"
                            "1.\tMake fleet?\n"
                            "2.\tBattlefleets?\n"
